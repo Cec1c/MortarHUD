@@ -432,7 +432,8 @@ public partial class App : Application
             new WindowsCursorPositionProvider(),
             recognizer,
             () => _settings.Roi,
-            message => _logger?.LogInformation("{Message}", message));
+            message => _logger?.LogInformation("{Message}", message),
+            () => _settings.Debug);
 
         _logger?.LogInformation(
             "OCR 链路就绪：引擎={Engines} 流水线={Pipelines}",

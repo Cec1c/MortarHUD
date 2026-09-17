@@ -566,13 +566,19 @@ public partial class SettingsWindow : Window
     }
 
     private void OnOpenDebugFolderClicked(object sender, RoutedEventArgs e)
+        => OpenFolder(AppPaths.DebugDirectory);
+
+    private void OnOpenSamplesFolderClicked(object sender, RoutedEventArgs e)
+        => OpenFolder(AppPaths.SamplesDirectory);
+
+    private void OpenFolder(string path)
     {
         try
         {
             AppPaths.EnsureDirectories();
             Process.Start(new ProcessStartInfo
             {
-                FileName = AppPaths.DebugDirectory,
+                FileName = path,
                 UseShellExecute = true,
             });
         }

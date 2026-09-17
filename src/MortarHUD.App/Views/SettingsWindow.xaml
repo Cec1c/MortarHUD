@@ -436,6 +436,12 @@
                 <CheckBox Content="保存原始 ROI" IsChecked="{Binding SaveRawRoi}"/>
                 <CheckBox Content="保存预处理结果" IsChecked="{Binding SaveProcessedRoi}"/>
                 <Button Content="打开 Debug 目录" HorizontalAlignment="Left" Margin="0,12,0,0" Click="OnOpenDebugFolderClicked"/>
+
+                <TextBlock Text="基准采样" Style="{StaticResource SectionHeader}"/>
+                <CheckBox Content="每次采集额外保存整屏 + 光标位置" IsChecked="{Binding SaveFullFrame}"/>
+                <TextBlock Style="{StaticResource Hint}" Margin="0,6,0,0"
+                           Text="用来标定 ROI 默认值。整屏和光标在同一时刻记录，事后能量出坐标文字相对光标的准确方位——只看 ROI 推不出来。此项独立于上面的 Debug 总开关，采样文件在 Samples 子目录。"/>
+                <Button Content="打开采样目录" HorizontalAlignment="Left" Margin="0,12,0,0" Click="OnOpenSamplesFolderClicked"/>
               </StackPanel>
             </Expander>
           </StackPanel>

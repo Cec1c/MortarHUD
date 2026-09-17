@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text.Json;
 using MortarHUD.Capture.Ocr;
 using MortarHUD.Capture.ScreenCapture;
 using MortarHUD.Core.Configuration;
@@ -60,6 +61,7 @@ public sealed class MortarCaptureService : IDisposable
     private readonly CoordinateRecognizer _recognizer;
     private readonly Func<RoiSettings> _roiSettingsAccessor;
     private readonly Action<string>? _log;
+    private readonly Func<DebugSettings>? _debugSettingsAccessor;
 
     /// <summary>
     /// 采集闸门：同一时刻只允许一次采集。
@@ -79,13 +81,15 @@ public sealed class MortarCaptureService : IDisposable
         ICursorPositionProvider cursorProvider,
         CoordinateRecognizer recognizer,
         Func<RoiSettings> roiSettingsAccessor,
-        Action<string>? log = null)
+        Action<string>? log = null,
+        Func<DebugSettings>? debugSettingsAccessor = null)
     {
         _captureProvider = captureProvider;
         _cursorProvider = cursorProvider;
         _recognizer = recognizer;
         _roiSettingsAccessor = roiSettingsAccessor;
         _log = log;
+        _debugSettingsAccessor = debugSettingsAccessor;
     }
 
     public async Task<CaptureOutcome> CaptureAsync(CancellationToken cancellationToken = default)
@@ -117,6 +121,8 @@ public sealed class MortarCaptureService : IDisposable
             var screenHeight = ResolveMonitorHeight(cursorX, cursorY, virtualScreen.Height);
 
             var rect = RoiCalculator.Compute(cursorX, cursorY, roi, screenHeight, virtualScreen);
+
+            SaveSampleFrameIfEnabled(virtualScreen, cursorX, cursorY);
 
             var captureWatch = Stopwatch.StartNew();
             Mat image;
@@ -185,6 +191,56 @@ public sealed class MortarCaptureService : IDisposable
         }
 
         return virtualScreenHeight > 0 ? virtualScreenHeight : 1080;
+    }
+
+    /// <summary>
+    /// 采样模式下额外存一张整屏 + 当时的光标位置。
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 存整屏而不是只存 ROI，是因为要标定「坐标文字在光标的哪个方位」时，
+    /// ROI 本身给不出参照——只有整屏加上光标位置这一对，才能事后把文字量准。
+    /// </para>
+    /// <para>
+    /// 用 <c>ImEncode</c> 而不是 <c>ImWrite</c>：后者对非 ASCII 路径会静默失败，
+    /// 而 <c>%AppData%</c> 在中文用户名下就是非 ASCII 的。
+    /// </para>
+    /// </remarks>
+    private void SaveSampleFrameIfEnabled(System.Drawing.Rectangle virtualScreen, int cursorX, int cursorY)
+    {
+        if (_debugSettingsAccessor?.Invoke().SaveFullFrame != true)
+        {
+            return;
+        }
+
+        try
+        {
+            var stamp = DateTime.Now.ToString("yyyy-MM-dd_HHmmss_fff");
+            Directory.CreateDirectory(AppPaths.SamplesDirectory);
+
+            using var frame = _captureProvider.Capture(virtualScreen);
+            Cv2.ImEncode(".png", frame, out var encoded);
+            File.WriteAllBytes(Path.Combine(AppPaths.SamplesDirectory, $"{stamp}_frame.png"), encoded);
+
+            var payload = JsonSerializer.Serialize(new
+            {
+                timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"),
+                cursor = new { x = cursorX, y = cursorY },
+                screen = new
+                {
+                    x = virtualScreen.X,
+                    y = virtualScreen.Y,
+                    w = virtualScreen.Width,
+                    h = virtualScreen.Height,
+                },
+            }, new JsonSerializerOptions { WriteIndented = true });
+
+            File.WriteAllText(Path.Combine(AppPaths.SamplesDirectory, $"{stamp}_sample.json"), payload);
+        }
+        catch (Exception ex) when (ex is OpenCVException or IOException or UnauthorizedAccessException or ScreenCaptureException)
+        {
+            _log?.Invoke($"采样保存失败：{ex.Message}");
+        }
     }
 
     public void Dispose()

@@ -104,6 +104,7 @@ public sealed class SettingsViewModel : ObservableObject
     private bool _showTiming;
     private bool _saveRawRoi;
     private bool _saveProcessedRoi;
+    private bool _saveFullFrame;
 
     // ---- 主题 ----
     private HudTheme? _selectedTheme;
@@ -217,6 +218,7 @@ public sealed class SettingsViewModel : ObservableObject
         _showTiming = d.ShowTiming;
         _saveRawRoi = d.SaveRawRoi;
         _saveProcessedRoi = d.SaveProcessedRoi;
+        _saveFullFrame = d.SaveFullFrame;
 
         RaiseAllChanged();
     }
@@ -286,6 +288,7 @@ public sealed class SettingsViewModel : ObservableObject
         d.ShowTiming = _showTiming;
         d.SaveRawRoi = _saveRawRoi;
         d.SaveProcessedRoi = _saveProcessedRoi;
+        d.SaveFullFrame = _saveFullFrame;
     }
 
     private void ApplyThemeToFields(HudTheme theme)
@@ -480,6 +483,9 @@ public sealed class SettingsViewModel : ObservableObject
     public bool ShowTiming { get => _showTiming; set { if (Set(ref _showTiming, value)) NotifyChanged(); } }
     public bool SaveRawRoi { get => _saveRawRoi; set { if (Set(ref _saveRawRoi, value)) NotifyChanged(); } }
     public bool SaveProcessedRoi { get => _saveProcessedRoi; set { if (Set(ref _saveProcessedRoi, value)) NotifyChanged(); } }
+
+    /// <summary>每次采集额外保存整屏 + 光标位置，供事后标定 ROI 默认值。</summary>
+    public bool SaveFullFrame { get => _saveFullFrame; set { if (Set(ref _saveFullFrame, value)) NotifyChanged(); } }
 
     public HudTheme? SelectedTheme
     {
