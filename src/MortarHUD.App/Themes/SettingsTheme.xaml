@@ -470,4 +470,80 @@
       </Setter.Value>
     </Setter>
   </Style>
+  <!-- ==================== 滚动条 ==================== -->
+  <!--
+        默认的 Aero2 滚动条是浅灰色的，在深色设置界面上是一道刺眼的白条。
+        换成细的深色滑块：轨道透明，滑块用半透明白，悬停与拖动时逐级提亮。
+        不画上下箭头按钮 —— 现代桌面应用普遍省掉它们，10px 的宽度也放不下。
+    -->
+  <Style x:Key="SettingsScrollThumb" TargetType="Thumb">
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="Thumb">
+          <Border x:Name="Bar" Background="#24FFFFFF" CornerRadius="3"/>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+              <Setter TargetName="Bar" Property="Background" Value="#3DFFFFFF"/>
+            </Trigger>
+            <Trigger Property="IsDragging" Value="True">
+              <Setter TargetName="Bar" Property="Background" Value="#59FFFFFF"/>
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <Style TargetType="ScrollBar">
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="Width" Value="10"/>
+    <Setter Property="MinWidth" Value="10"/>
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="ScrollBar">
+          <Grid Background="{TemplateBinding Background}">
+            <!-- PART_Track 是 ScrollBar 按名字查找的，不能改名。 -->
+            <Track x:Name="PART_Track" IsDirectionReversed="True">
+              <Track.DecreaseRepeatButton>
+                <RepeatButton Command="ScrollBar.PageUpCommand" Opacity="0" Focusable="False"/>
+              </Track.DecreaseRepeatButton>
+              <Track.Thumb>
+                <Thumb Style="{StaticResource SettingsScrollThumb}" Margin="2,0"/>
+              </Track.Thumb>
+              <Track.IncreaseRepeatButton>
+                <RepeatButton Command="ScrollBar.PageDownCommand" Opacity="0" Focusable="False"/>
+              </Track.IncreaseRepeatButton>
+            </Track>
+          </Grid>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+    <Style.Triggers>
+      <Trigger Property="Orientation" Value="Horizontal">
+        <Setter Property="Width" Value="Auto"/>
+        <Setter Property="MinWidth" Value="0"/>
+        <Setter Property="Height" Value="10"/>
+        <Setter Property="MinHeight" Value="10"/>
+        <Setter Property="Template">
+          <Setter.Value>
+            <ControlTemplate TargetType="ScrollBar">
+              <Grid Background="{TemplateBinding Background}">
+                <Track x:Name="PART_Track" IsDirectionReversed="False">
+                  <Track.DecreaseRepeatButton>
+                    <RepeatButton Command="ScrollBar.PageLeftCommand" Opacity="0" Focusable="False"/>
+                  </Track.DecreaseRepeatButton>
+                  <Track.Thumb>
+                    <Thumb Style="{StaticResource SettingsScrollThumb}" Margin="0,2"/>
+                  </Track.Thumb>
+                  <Track.IncreaseRepeatButton>
+                    <RepeatButton Command="ScrollBar.PageRightCommand" Opacity="0" Focusable="False"/>
+                  </Track.IncreaseRepeatButton>
+                </Track>
+              </Grid>
+            </ControlTemplate>
+          </Setter.Value>
+        </Setter>
+      </Trigger>
+    </Style.Triggers>
+  </Style>
 </ResourceDictionary>
