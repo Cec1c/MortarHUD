@@ -4,10 +4,10 @@
     "height": 1080
   },
   "roiDefaults": {
-    "offsetX": -15,
-    "offsetY": -90,
-    "width": 150,
-    "height": 140
+    "offsetX": 5,
+    "offsetY": -74,
+    "width": 100,
+    "height": 96
   },
   "fixtures": [
     {
@@ -17,10 +17,10 @@
       "expectedY": 109.78,
       "cursorX": 947,
       "cursorY": 526,
-      "roiX": 932,
-      "roiY": 436,
-      "roiWidth": 150,
-      "roiHeight": 140,
+      "roiX": 952,
+      "roiY": 452,
+      "roiWidth": 100,
+      "roiHeight": 96,
       "expectedText": "y109.78\nx98.09",
       "labelBounds": {
         "x": 963,
@@ -37,10 +37,10 @@
       "expectedY": 110.07,
       "cursorX": 1186,
       "cursorY": 475,
-      "roiX": 1171,
-      "roiY": 385,
-      "roiWidth": 150,
-      "roiHeight": 140,
+      "roiX": 1191,
+      "roiY": 401,
+      "roiWidth": 100,
+      "roiHeight": 96,
       "expectedText": "y110.07\nx99.58",
       "labelBounds": {
         "x": 1206,
@@ -57,10 +57,10 @@
       "expectedY": 114.54,
       "cursorX": 1108,
       "cursorY": 510,
-      "roiX": 1093,
-      "roiY": 420,
-      "roiWidth": 150,
-      "roiHeight": 140,
+      "roiX": 1113,
+      "roiY": 436,
+      "roiWidth": 100,
+      "roiHeight": 96,
       "expectedText": "y114.54\nx107.66",
       "labelBounds": {
         "x": 1126,

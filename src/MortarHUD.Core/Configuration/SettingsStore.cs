@@ -92,6 +92,28 @@ public sealed class SettingsStore
             settings.SchemaVersion = 2;
         }
 
+        // v2 → v3：ROI 默认窗口收紧。
+        //
+        // 原来的 150x140 是给旧锚点 (+21,-57) 留的 ±30px 容错，而那个锚点偏了约 15px。
+        // 窗口过大把地图网格线也框了进来——网格线是半透明白，比坐标文字还亮，
+        // 二值化后变成粗黑块，与 y、x 两个轴字母粘连，直接啃掉轴字母，
+        // 识别结果退化成 "10.29" 这种残片，解析器随即判 X_NOT_FOUND。
+        // 用 35 份「整屏 + 光标位置」同刻采样重新标定后，收紧到文字块外围 +12px。
+        //
+        // 同样只在用户没动过 ROI 时才迁移（四个值都还是旧默认）。
+        if (settings.SchemaVersion < 3)
+        {
+            if (settings.Roi is { Width: 150, Height: 140, OffsetX: -15, OffsetY: -90 })
+            {
+                settings.Roi.Width = RoiSettings.ReferenceWidth;
+                settings.Roi.Height = RoiSettings.ReferenceHeight;
+                settings.Roi.OffsetX = RoiSettings.ReferenceOffsetX;
+                settings.Roi.OffsetY = RoiSettings.ReferenceOffsetY;
+            }
+
+            settings.SchemaVersion = 3;
+        }
+
         // 兜底：老文件里缺少的嵌套对象补上，避免 NRE。
         settings.General ??= new GeneralSettings();
         settings.Hotkeys ??= new HotkeySettings();

@@ -57,14 +57,20 @@ public sealed class CoordinateRecognizer
         _validator = validator;
     }
 
-    public async Task<RecognitionOutcome> RecognizeAsync(Mat roi, CancellationToken cancellationToken)
+    public async Task<RecognitionOutcome> RecognizeAsync(
+        Mat roi, CancellationToken cancellationToken, System.Drawing.Point? cursorInRoi = null)
     {
         ArgumentNullException.ThrowIfNull(roi);
 
         var totalWatch = Stopwatch.StartNew();
         var attempts = new List<RecognitionAttempt>();
 
+        // 先把原图交给观察者，保证 Debug 转储和「查看单次识别结果」看到的是真实画面。
         _observer?.OnRawRoi(roi);
+
+        // 再抹掉光标锚点，后续所有流水线都跑在抹过的图上。
+        using var masked = cursorInRoi is { } cursor ? MaskCursorAnchor(roi, cursor) : null;
+        var working = masked ?? roi;
 
         foreach (var engine in _engines)
         {
@@ -72,7 +78,7 @@ public sealed class CoordinateRecognizer
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                attempts.Add(await RunOneAsync(engine, preprocessor, roi, cancellationToken)
+                attempts.Add(await RunOneAsync(engine, preprocessor, working, cancellationToken)
                     .ConfigureAwait(false));
             }
         }
@@ -88,6 +94,42 @@ public sealed class CoordinateRecognizer
         });
         return validation.IsValid ? outcome : outcome with
         { Success = false, Coordinate = null, Error = validation.Error };
+    }
+
+    /// <summary>
+    /// 把光标锚点周围涂成背景色。
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 游戏会在光标处画一个箭头和一对括号。坐标文字虽然整体在光标右上方，
+    /// 但 <c>x</c> 行只比光标高几个像素——箭头和它落在**同一高度**上，
+    /// Tesseract 会把箭头当成同一行的字符，读出来是乱码，<c>x</c> 轴字母就丢了。
+    /// 实测 fixture 003 正是栽在这上面（<c>X_NOT_FOUND</c>）。
+    /// </para>
+    /// <para>
+    /// 抹掉是安全的：文字距光标最近的一笔也在 40px 开外，半径 30 的方块碰不到。
+    /// </para>
+    /// </remarks>
+    private static Mat MaskCursorAnchor(Mat roi, System.Drawing.Point cursor, int radius = 30)
+    {
+        var masked = roi.Clone();
+
+        var x0 = Math.Max(0, cursor.X - radius);
+        var y0 = Math.Max(0, cursor.Y - radius);
+        var x1 = Math.Min(masked.Width, cursor.X + radius);
+        var y1 = Math.Min(masked.Height, cursor.Y + radius);
+
+        if (x1 <= x0 || y1 <= y0)
+        {
+            return masked;
+        }
+
+        // 填充色取整幅 ROI 的均值：它必然偏向背景那一侧（文字占比很小），
+        // 抹上去之后不会比周围更亮而重新变成前景。
+        var background = Cv2.Mean(roi);
+        Cv2.Rectangle(masked, new Rect(x0, y0, x1 - x0, y1 - y0), background, thickness: -1);
+
+        return masked;
     }
 
     private async Task<RecognitionAttempt> RunOneAsync(

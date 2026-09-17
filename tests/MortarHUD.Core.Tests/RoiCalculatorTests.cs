@@ -27,9 +27,9 @@ public class RoiCalculatorTests
     /// 默认 ROI 必须把实机截图里测出来的文字块完整包住。
     /// </summary>
     /// <remarks>
-    /// 实测（1920x1080）：y 行左上角约在光标 +(21, -57)，整块读数约 70x67。
-    /// 这条测试把「默认值能框住文字」这个结论固化下来——
-    /// 以后谁改了默认值，这里会立刻发现。
+    /// 实测（1920x1080，三张实机截图交叉验证）：y 行左上角在光标 +(18, -61)，
+    /// 整块读数（y 行 + x 行）约 75x72。这条测试把「默认值能框住文字」这个结论
+    /// 固化下来——以后谁改了默认值，这里会立刻发现。
     /// </remarks>
     [Fact]
     public void ComputeRaw_DefaultSettings_CoversMeasuredLabelBlock()
@@ -37,10 +37,11 @@ public class RoiCalculatorTests
         var roi = new RoiSettings { AutoScale = false };
         var rect = RoiCalculator.ComputeRaw(1000, 500, roi, 1080);
 
-        var labelLeft = 1000 + 21;
-        var labelTop = 500 - 57;
-        var labelRight = labelLeft + 90;   // 允许坐标到 3 位整数时的最大宽度
-        var labelBottom = labelTop + 70;
+        var labelLeft = 1000 + 18;
+        var labelTop = 500 - 61;
+        // 整块读数约 75 宽 72 高；再放一点，容纳「坐标到 3 位整数」的极端情况。
+        var labelRight = labelLeft + 80;
+        var labelBottom = labelTop + 72;
 
         Assert.True(rect.Left <= labelLeft, $"ROI 左边 {rect.Left} 没盖住文字左边 {labelLeft}");
         Assert.True(rect.Top <= labelTop, $"ROI 上边 {rect.Top} 没盖住文字上边 {labelTop}");

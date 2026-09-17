@@ -56,10 +56,12 @@ public sealed class PipelineC : PreprocessorBase
         topHat.Dispose();
 
         // 顶帽 + 双门限得到的是「白字黑底」，翻转成 OCR 要的黑字白底。
-        var blackTextOnWhite = new Mat();
+        using var blackTextOnWhite = new Mat();
         Cv2.BitwiseNot(whiteTextOnBlack, blackTextOnWhite);
         whiteTextOnBlack.Dispose();
 
-        return blackTextOnWhite;
+        // 顶帽对「细长结构」同样敏感，地图网格线也会被它抓进来，
+        // 所以这里和 Pipeline A 一样要去直线。详见 RemoveLongLines。
+        return RemoveLongLines(blackTextOnWhite, LineKernelLength(blackTextOnWhite));
     }
 }

@@ -143,8 +143,12 @@ public sealed class MortarCaptureService : IDisposable
             {
                 using (image)
                 {
+                    // 把光标在 ROI 内的位置交给识别器：它要在预处理前把光标锚点
+                    // （游戏画的箭头和括号）抹掉，否则会和 x 行混成一行。
+                    var cursorInRoi = new System.Drawing.Point(cursorX - rect.X, cursorY - rect.Y);
+
                     var recognition = await _recognizer
-                        .RecognizeAsync(image, cancellationToken)
+                        .RecognizeAsync(image, cancellationToken, cursorInRoi)
                         .ConfigureAwait(false);
 
                     totalWatch.Stop();

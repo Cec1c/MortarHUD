@@ -5,22 +5,24 @@ namespace MortarHUD.Core.Configuration;
 /// </summary>
 /// <remarks>
 /// <para>
-/// 默认值不是 TDD 初稿里的 <c>+10, -80, 240x140</c>，而是根据仓库里三张实机截图反推出来的。
-/// 测量方法（三图交叉验证）：坐标读数以光标为锚点，<c>y</c> 行左上角约为
-/// 光标 <c>+(21, -57)</c>，<c>x</c> 行再往右下各偏 <c>+(25, +55)</c>；整块文本约 70x67 px。
-/// 因此这里取一个把整块文本包住、并留出 ±30px 容错的窗口。
+/// 默认值按 1920x1080 实机标注标定：<c>y</c> 行左上角在光标 <c>+(18, -61)</c>，
+/// 整块读数（<c>y</c> 行 + <c>x</c> 行）约 75x72，两行相距 55px、水平缩进 25px。
+/// 这里取一个把整块文字包住并留 ±12px 余量的窗口。
 /// </para>
 /// <para>
-/// TDD §10.2 明确要求「实际默认值必须根据截图 Benchmark 调整」，此即调整结果。
+/// **不要为了「容错」再把它放大**：地图网格线会穿过 ROI，它是半透明白，
+/// 比坐标文字还亮，二值化后变成粗黑块，与 y、x 两个轴字母粘连，直接把识别结果
+/// 啃成 "10.29" 这种缺了轴字母的残片。ROI 越小，网格线能造成的破坏面积越小——
+/// 原来那个 150x140 的窗口就是栽在这一点上。
 /// </para>
 /// </remarks>
 public sealed class RoiSettings
 {
     /// <summary>与 1920x1080 参考分辨率对应的默认偏移。</summary>
-    public const int ReferenceOffsetX = -15;
-    public const int ReferenceOffsetY = -90;
-    public const int ReferenceWidth = 150;
-    public const int ReferenceHeight = 140;
+    public const int ReferenceOffsetX = 5;
+    public const int ReferenceOffsetY = -74;
+    public const int ReferenceWidth = 100;
+    public const int ReferenceHeight = 96;
 
     public int Width { get; set; } = ReferenceWidth;
 

@@ -24,14 +24,16 @@ public sealed class PipelineA : PreprocessorBase
         // 先拉满对比度，让 Otsu 在两个峰之间切得更稳。
         StretchContrast(upscaledGray);
 
-        var blackTextOnWhite = new Mat();
+        using var raw = new Mat();
         Cv2.Threshold(
             upscaledGray,
-            blackTextOnWhite,
+            raw,
             0,
             255,
             ThresholdTypes.BinaryInv | ThresholdTypes.Otsu);
 
-        return blackTextOnWhite;
+        // 抹掉地图网格线：它比坐标文字还亮，Otsu 一定把它一起当字，
+        // 而它穿过 ROI 时会啃掉 y、x 两个轴字母。详见 RemoveLongLines。
+        return RemoveLongLines(raw, LineKernelLength(raw));
     }
 }

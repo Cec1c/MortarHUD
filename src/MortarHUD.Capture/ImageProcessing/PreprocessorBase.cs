@@ -136,6 +136,63 @@ public abstract class PreprocessorBase : IImagePreprocessor
         return mask;
     }
 
+    /// <summary>
+    /// 抹掉贯穿画面的长直线——地图网格线。
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 网格线是半透明白，实测**比坐标文字还亮**（max 212 对 195），Otsu 必然把它
+    /// 一起当字。它穿过 ROI 时会与 <c>y</c>、<c>x</c> 两个轴字母粘连，把轴字母整个
+    /// 啃掉，识别结果退化成 <c>"10.29"</c> 这种残片，解析器随即判 X_NOT_FOUND。
+    /// 这就是「同一个坐标有时读得出、有时读不出」的来源：网格线间隔固定，
+    /// 光标落在哪里决定了它在不在 ROI 里。
+    /// </para>
+    /// <para>
+    /// 判据是**长度**而不是亮度（亮度区分不开）：网格线横跨整个 ROI，
+    /// 而数字笔画最高也就十来像素。用长条核做开运算只留得下前者。
+    /// </para>
+    /// <para>
+    /// 注意反过来会有副作用：如果文字本身与网格线**重叠**，那部分笔画会被一起抹掉。
+    /// 所以 ROI 要尽量小，让网格线在框内可辨识、文字尽量不与它相交。
+    /// </para>
+    /// </remarks>
+    /// <param name="blackTextOnWhite">黑字白底的二值图。</param>
+    /// <param name="kernelLength">长条核的长度，应大于笔画高度、小于网格线长度。</param>
+    protected static Mat RemoveLongLines(Mat blackTextOnWhite, int kernelLength)
+    {
+        // 开运算作用于白色前景，所以先反色，把「字和线」变成白。
+        using var inverted = new Mat();
+        Cv2.BitwiseNot(blackTextOnWhite, inverted);
+
+        using var horizontalKernel = Cv2.GetStructuringElement(
+            MorphShapes.Rect, new Size(kernelLength, 1));
+        using var verticalKernel = Cv2.GetStructuringElement(
+            MorphShapes.Rect, new Size(1, kernelLength));
+
+        using var horizontal = new Mat();
+        using var vertical = new Mat();
+        Cv2.MorphologyEx(inverted, horizontal, MorphTypes.Open, horizontalKernel);
+        Cv2.MorphologyEx(inverted, vertical, MorphTypes.Open, verticalKernel);
+
+        using var lines = new Mat();
+        Cv2.BitwiseOr(horizontal, vertical, lines);
+
+        // 把判别为直线的像素涂回背景色（白），剩下的就是纯文字。
+        var cleaned = new Mat();
+        Cv2.BitwiseOr(blackTextOnWhite, lines, cleaned);
+        return cleaned;
+    }
+
+    /// <summary>
+    /// 按图像尺寸推算去直线的核长。
+    /// </summary>
+    /// <remarks>
+    /// 取高度的一半：网格线穿过 ROI 时至少有这么长，而笔画远达不到。
+    /// 用比例而不是定值，是为了让用户改大 ROI 后依然成立。
+    /// </remarks>
+    protected static int LineKernelLength(Mat upscaled) =>
+        Math.Max(32, (int)(upscaled.Height * 0.5));
+
     /// <summary>把图像按标准差拉满对比度，用于低对比度的地图底色。</summary>
     protected static void StretchContrast(Mat gray)
     {
