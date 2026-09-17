@@ -3,11 +3,13 @@ using MortarHUD.Core.Configuration;
 using MortarHUD.Core.Models;
 using MortarHUD.Core.Session;
 using MortarHUD.Core.Themes;
+using MortarHUD.Localization;
 using Xunit;
 
 namespace MortarHUD.Core.Tests;
 
 /// <summary>HUD 排版测试（TDD §20 / §25）。</summary>
+[Collection(LocalizationCollection.Name)]
 public class HudLayoutFormatterTests
 {
     private static MortarSession CreateSolvedSession()
@@ -147,6 +149,8 @@ public class HudLayoutFormatterTests
     [InlineData(MortarStatusKind.None, "")]
     public void DescribeStatus_IsLocalized(MortarStatusKind status, string expected)
     {
+        Loc.Language = Loc.Chinese;
+
         Assert.Equal(expected, HudLayoutFormatter.DescribeStatus(status));
     }
 
@@ -154,6 +158,11 @@ public class HudLayoutFormatterTests
     /// TDD §16：OCR 失败时必须让用户看到「目标没变」，
     /// 否则用户会以为新目标已经锁上了。
     /// </summary>
+    /// <remarks>
+    /// 断言里是中文原文，所以这里先明确把语言定成中文——不能靠「环境恰好是中文」。
+    /// 与 <c>LocTableTests</c> 同属 <see cref="LocalizationCollection"/>，
+    /// 两者不会并行抢那个静态的语言设置。
+    /// </remarks>
     [Theory]
     [InlineData(MortarStatusKind.OcrFailed)]
     [InlineData(MortarStatusKind.InvalidCoordinate)]
@@ -161,6 +170,8 @@ public class HudLayoutFormatterTests
     [InlineData(MortarStatusKind.CaptureCancelled)]
     public void DescribeStatusDetail_FailuresSayTargetUnchanged(MortarStatusKind status)
     {
+        Loc.Language = Loc.Chinese;
+
         Assert.Equal("目标未改变", HudLayoutFormatter.DescribeStatusDetail(status));
     }
 

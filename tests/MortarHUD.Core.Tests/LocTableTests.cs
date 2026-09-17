@@ -11,6 +11,7 @@ namespace MortarHUD.Core.Tests;
 /// 这些断言看着琐碎，但它们拦的是同一类事故：新加一条文案只填了中文，
 /// 英文用户看到一个空串或一个键名。那种错误在中文环境下永远测不出来。
 /// </remarks>
+[Collection(LocalizationCollection.Name)]
 public sealed class LocTableTests
 {
     private static readonly Regex Han = new(@"[一-鿿]", RegexOptions.Compiled);
