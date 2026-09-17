@@ -24,7 +24,7 @@ RNG 152m
 
 **硬约束（改代码时不能破）**：不注入进程、不读写游戏内存、**不模拟键鼠输入**、不联网。
 只做两件事：注册全局热键、在按键那一刻截取屏幕上一小块。
-完整需求见 `MortarHUD_TDD_v0.2.md`。
+完整需求见 `docs/requirements.md`。
 
 ---
 
@@ -79,14 +79,17 @@ dist\MortarHUD\MortarHUD.exe --screenshot <输出目录> --expanded
 # 追加 --compact：用 920x680 渲染（默认 1040x760）
 dist\MortarHUD\MortarHUD.exe --screenshot <输出目录> --compact
 
-# OCR 基准测试（TDD §17），会生成 docs\ocr-benchmark.md
-"C:/dotnet10/dotnet.exe" tools/MortarHUD.Benchmark/bin/Release/net10.0-windows/MortarHUD.Benchmark.dll
+# OCR 基准测试，会生成 docs\ocr-benchmark.md
+# 必须用 dotnet run —— 它会先把工作目录切到项目目录。
+# 直接以仓库根为工作目录去跑 bin 里的 dll，OpenCV 原生库会加载失败
+# （DllNotFoundException: OpenCvSharpExtern），因为它的解析依赖工作目录。
+"C:/dotnet10/dotnet.exe" run --project tools/MortarHUD.Benchmark -c Release
 
 # 把每条流水线的二值化结果 dump 成 PNG —— 调 OCR 时唯一靠谱的手段
-... MortarHUD.Benchmark.dll --dump <输出目录>
+"C:/dotnet10/dotnet.exe" run --project tools/MortarHUD.Benchmark -c Release -- --dump <输出目录>
 
 # 从实机截图重新学习字形模板库
-... MortarHUD.Benchmark.dll --gen-templates
+"C:/dotnet10/dotnet.exe" run --project tools/MortarHUD.Benchmark -c Release -- --gen-templates
 ```
 
 日志：`%AppData%\MortarHUD\Logs\yyyy-MM-dd.log`（输入层、热键、采集、OCR 明细都在里面）
@@ -110,7 +113,7 @@ src/
 │
 ├─ MortarHUD.Capture/           截屏 → 预处理 → OCR
 │  ├─ ScreenCapture/            IScreenCaptureProvider + GDI 实现 + ROI 计算
-│  ├─ ImageProcessing/          Pipeline A / B / C（TDD §14）
+│  ├─ ImageProcessing/          Pipeline A / B / C
 │  ├─ Diagnostics/              Debug 转储（原始 ROI / 预处理图 / 结果 JSON）
 │  └─ Ocr/                      引擎接口、Tesseract、模板匹配、交叉验证编排
 │
@@ -220,7 +223,7 @@ src/
 - 卡片内按钮的悬停底色用的是新增的 `SurfaceHoverBrush`；`SurfaceAltBrush` 已废弃，
   不要再把它拿回来当通用底色用——那正是这次「层次压平」的病根。
 
-### ⚪ 5. 从未验证过的 TDD 验收项
+### ⚪ 5. 从未验证过的验收项
 
 这些都必须在真实桌面会话里手工验证，自动化不了：
 
@@ -232,7 +235,7 @@ src/
 
 ### ⚪ 6. 基准测试集只有 3 个 fixture
 
-TDD §17 要求至少 30 个，覆盖不同地图区域 / 明暗背景 / 缩放等级。
+目标基准集至少需要 30 个，覆盖不同地图区域 / 明暗背景 / 缩放等级。
 补图方式：扔进 `tests/Fixtures/screenshots/`，往 `fixtures.json` 加条目。
 `labelBounds` 字段是手工实测的文字区域，只有模板生成器用。
 
@@ -257,6 +260,8 @@ TDD §17 要求至少 30 个，覆盖不同地图区域 / 明暗背景 / 缩放�
 | **发布后删本机原生库** | 单文件模式下 EXE 早就打包完了，事后删目录里的文件没有任何作用 | 在 `ComputeFilesToPublish` 之后、`_ComputeFilesToBundle` 之前用 MSBuild 过滤（见 `MortarHUD.App.csproj` 的 `FilterUnusedPublishAssets`）；或者源头就用 `ExcludeAssets="all"` + 显式 `Content` 只带要的那一个 |
 | **Raw Input 把按下、长按重复、松开都报上来** | 松开 M 也触发一次校准，还会取消掉刚发起的那次 | `ObservedKeyState` 按 (设备, 键) 记状态，只认新的按下；松开只清理 |
 | **`WM_INPUT` 处理完不调 `DefWindowProc`** | 系统的输入缓冲不会被清理 | 返回 `DefWindowProc(hWnd, msg, wParam, lParam)` |
+| **以仓库根为工作目录直跑基准工具的 dll** | OpenCV 原生库加载失败：`DllNotFoundException: OpenCvSharpExtern`（报错说的是"或它的某个依赖"，很容易误判成缺文件） | 用 `dotnet run --project tools/MortarHUD.Benchmark`，它会先把工作目录切到项目目录；或先 `cd` 到它的 bin 输出目录再跑 |
+| **HUD 位置由 `anchor + offset` 算出，`offset` 存的是 DIP** | 拖动时除以 DPI 缩放、落位时乘回来，两边不一致就会漂移 | 落位算法统一走 `Core/Session/HudPlacement`，并带"至少留 40px 可见"的钳制 |
 | **`additionalProbingPaths` 指向扁平目录** | 只认 NuGet 布局 `libs/<包名>/<版本>/...`，扁平目录会报 "assembly specified in the dependency manifest was not found" | 现在默认不再组织成 libs 布局（`OrganizeLegacyLayout=false`，产物是标准扁平布局）。只有要恢复旧布局才需要 `tools/organize-publish.ps1` |
 | **Python 用 `utf-8` 读带 BOM 的文件** | 不会剥掉 BOM，再写一次就变成双 BOM | 用 `utf-8-sig` 或 `lstrip('\ufeff')` |
 | **`.cmd` 文件存成 UTF-8** | cmd.exe 按 GBK 读，中文注释被解成命令 | 存成 GBK |

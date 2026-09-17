@@ -1,6 +1,10 @@
 <div align="center">
 
+<img src="src/MortarHUD.App/Assets/MortarHUD.png" width="88" alt="MortarHUD">
+
 # MortarHUD
+
+**《Wardogs》迫击炮坐标解算外置 HUD**
 
 [![运行时：.NET 10](https://img.shields.io/static/v1?label=%E8%BF%90%E8%A1%8C%E6%97%B6&message=.NET%2010&color=512BD4&style=flat-square&logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
 [![界面：WPF](https://img.shields.io/static/v1?label=%E7%95%8C%E9%9D%A2&message=WPF&color=512BD4&style=flat-square)](#项目结构)
@@ -11,7 +15,7 @@
 
 读屏识别游戏地图上的坐标读数，实时解算迫击炮的方位角与距离，并以透明置顶 HUD 显示。
 
-[快速开始](#快速开始) ｜ [OCR 基准测试](#ocr-基准测试) ｜ [项目结构](#项目结构) ｜ [已知边界](#已知边界)
+[快速开始](#快速开始) ｜ [界面](#界面) ｜ [OCR 基准测试](#ocr-基准测试) ｜ [项目结构](#项目结构) ｜ [已知边界](#已知边界)
 
 > 要接手这个项目继续开发？先读 **[AGENTS.md](AGENTS.md)** —— 环境坑、架构、未决问题、踩过的雷都在里面。
 
@@ -51,6 +55,15 @@ RNG 152m
 
 > [!NOTE]
 > 本项目不实现自动瞄准、弹道模拟、风偏修正、武器数据库或敌人识别。它的输出只有方位角和距离两个数，怎么用由你决定。
+
+## 界面
+
+设置窗口分三页：**日常使用 / 外观 / 诊断**。
+
+![MortarHUD 设置界面](docs/images/settings-window.png)
+
+日常要改的（键位、HUD 大小与位置）默认展开；字体、颜色、特效、OCR 引擎路径
+这类不常动的收在折叠项里，不让它们把主界面淹掉。
 
 ## 快速开始
 
@@ -151,7 +164,7 @@ AZ  = atan2(dx, dy) 转角度，归一到 [0, 360)
 
 ## OCR 基准测试
 
-TDD 要求「先 Benchmark，再决定默认 OCR 引擎」，而不是凭感觉挑一个。仓库里有三张实机截图作为基准测试集，工具是 `tools/MortarHUD.Benchmark`：
+默认 OCR 引擎是基准测试选出来的，不是凭感觉挑的。仓库里有三张实机截图作为基准测试集，工具是 `tools/MortarHUD.Benchmark`：
 
 ```bash
 dotnet run --project tools/MortarHUD.Benchmark
@@ -181,7 +194,7 @@ Fixture 003：流水线 C 读失败，流水线 A 读对
 
 ### ROI 默认值是怎么来的
 
-TDD 初稿给的默认 ROI 是 `offset(+10, −80)`、`240×140`，并注明「实际默认值必须根据截图 Benchmark 调整」。仓库里的三张 1920×1080 实机截图交叉验证后测得的实际几何是：
+最初的 ROI 默认值是 `offset(+10, −80)`、`240×140`。仓库里的三张 1920×1080 实机截图交叉验证后测得的实际几何是：
 
 ```text
 y 行左上角 ≈ 光标 + (+21, −57)
@@ -194,7 +207,7 @@ x 行左上角 ≈ y 行 + (+25, +55)      # 两行左对齐、第二行缩进
 不同分辨率下会用 `AutoScale` 按屏幕高度相对 1080 自动缩放。
 
 > [!WARNING]
-> 当前基准测试集只有 **3 个 ROI**，而 TDD §17 要求至少 **30 个**，覆盖不同地图区域、明暗背景、复杂地形与不同缩放等级。
+> 当前基准测试集只有 **3 个 ROI**，而目标基准集至少需要 **30 个**，覆盖不同地图区域、明暗背景、复杂地形与不同缩放等级。
 > 在这之前不应认为 OCR 已经稳定（目标正确率 ≥ 99%）。如果你能提供更多截图，`tests/Fixtures/` 的补充方式见 `tests/Fixtures/fixtures.json` 的结构。
 
 ## 配置
@@ -311,7 +324,7 @@ dotnet test MortarHUD.sln
 覆盖面包括：
 
 - **解算**：八方向 + 同点 + 平移不变性 + `[0, 360)` 边界 + 2000 组随机的方位角范围检查；
-- **解析**：TDD 列出的全部合法格式、可修正的 OCR 错认（`xI07.66`），以及必须拒绝的情况（`x10766`、小数位丢失、同轴歧义、轴字母出现在单词里）；
+- **解析**：全部合法输入格式、可修正的 OCR 错认（`xI07.66`），以及必须拒绝的情况（`x10766`、小数位丢失、同轴歧义、轴字母出现在单词里）；
 - **校验**：缺轴、越界、非有限值、低置信度、自定义范围；
 - **状态机**：没有炮位时拒绝计算、OCR 失败时目标不被污染、换炮位后重算；
 - **ROI**：默认值确实覆盖实测文字块、分辨率缩放、屏幕边缘裁剪、多显示器负原点；
@@ -381,11 +394,11 @@ dotnet run --project tools/MortarHUD.Benchmark -- --gen-templates
 
 ### 加一个新的预处理流水线
 
-实现 `IImagePreprocessor`，返回黑字白底的单通道 `Mat`，然后在 `PreprocessorFactory.All` 里注册。如果它在基准测试里表现足够好，再考虑加进 `AutoCandidates`——注意 `Auto` 每多一条流水线就多约 40ms 的耗时，而 TDD 要求的端到端目标是 100ms 以内。
+实现 `IImagePreprocessor`，返回黑字白底的单通道 `Mat`，然后在 `PreprocessorFactory.All` 里注册。如果它在基准测试里表现足够好，再考虑加进 `AutoCandidates`——注意 `Auto` 每多一条流水线就多约 40ms 的耗时，而端到端目标是 100ms 以内。
 
 ### 加一个新的 OCR 引擎
 
-实现 `ICoordinateOcrEngine`。接口约定：引擎只负责把图上的字读出来，填 `RawText` 与 `Confidence`，`X`/`Y` 一律留空——数值解析由 `CoordinateTextParser` 负责，这是 TDD §15「OCR 不参与最终可信判断」的落地方式。
+实现 `ICoordinateOcrEngine`。接口约定：引擎只负责把图上的字读出来，填 `RawText` 与 `Confidence`，`X`/`Y` 一律留空——数值解析由 `CoordinateTextParser` 负责，这是「OCR 不参与最终可信判断」这条原则的落地方式。
 
 ### 调试 OCR
 
@@ -428,4 +441,9 @@ dist\MortarHUD\MortarHUD.exe --selftest
 
 ---
 
-本文档描述当前仓库源码。项目尚未建立版本发布流程。
+## 协议
+
+[Apache-2.0](LICENSE) © 2026 Cec1c
+
+本项目只读取屏幕像素：不注入游戏进程、不读写游戏内存、不模拟任何键鼠输入、不联网。
+使用它意味着你接受由此带来的一切后果，包括但不限于游戏服务条款方面的风险。

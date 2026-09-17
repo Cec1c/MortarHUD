@@ -56,7 +56,7 @@ if (dumpDirectory is not null)
     Directory.CreateDirectory(dumpDirectory);
 }
 
-Console.WriteLine("MortarHUD OCR Benchmark（TDD §17）");
+Console.WriteLine("MortarHUD OCR Benchmark");
 Console.WriteLine(new string('=', 108));
 Console.WriteLine($"Fixture 数量   : {manifest.Fixtures.Count}");
 Console.WriteLine($"参考分辨率     : {manifest.ReferenceResolution.Width}x{manifest.ReferenceResolution.Height}");
@@ -386,7 +386,7 @@ static void PrintRecommendation(List<BenchmarkRow> rows)
     {
         Console.WriteLine();
         Console.WriteLine($"注意：当前只有 {fixtureCount} 个 fixture。");
-        Console.WriteLine("TDD §17 要求至少 30 个 ROI、覆盖多种地图区域与缩放等级，");
+        Console.WriteLine("目标基准集至少需要 30 个 ROI、覆盖多种地图区域与缩放等级，");
         Console.WriteLine("在凑齐之前不得宣称 OCR 已经稳定（目标：坐标正确率 >= 99%）。");
     }
 }
@@ -396,7 +396,7 @@ static string BuildMarkdownReport(FixtureManifest manifest, List<BenchmarkRow> r
 {
     var builder = new StringBuilder();
 
-    builder.AppendLine("# MortarHUD OCR Benchmark 报告（TDD §17）");
+    builder.AppendLine("# MortarHUD OCR Benchmark 报告");
     builder.AppendLine();
     builder.AppendLine("> 本文件由 `MortarHUD.Benchmark` 自动生成，请勿手工编辑。");
     builder.AppendLine("> 重新生成：`dotnet run --project tools/MortarHUD.Benchmark`");
@@ -478,7 +478,7 @@ static string BuildMarkdownReport(FixtureManifest manifest, List<BenchmarkRow> r
         builder.AppendLine("### ⚠️ 测试集不足");
         builder.AppendLine();
         builder.AppendLine($"当前只有 **{manifest.Fixtures.Count}** 个 fixture。");
-        builder.AppendLine("TDD §17 要求至少 **30 个 ROI**，覆盖不同地图区域、黑/灰背景、复杂地形、");
+        builder.AppendLine("目标基准集至少需要 **30 个 ROI**，覆盖不同地图区域、黑/灰背景、复杂地形、");
         builder.AppendLine("目标图标附近、UI 弹窗附近与不同缩放等级。");
         builder.AppendLine("**在凑齐之前不得宣称 OCR 已经稳定**（目标：坐标正确率 >= 99%）。");
     }
