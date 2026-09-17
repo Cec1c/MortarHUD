@@ -44,6 +44,46 @@ public class DebugInfoFormatterTests
     }
 
     [Fact]
+    public void IsVisible_EnabledButNothingSelected_ReturnsFalse()
+    {
+        // 打开了 Debug 却一个显示项都没勾：面板里只剩一块底板。
+        // 注意不能用 BuildLines 是否为空来判断——流水线摘要是无条件追加的。
+        var hud = new HudSettings { Visible = true };
+        var debug = new DebugSettings { Enabled = true };
+        Assert.NotEmpty(DebugInfoFormatter.BuildLines(CreateSnapshot(), debug));
+
+        Assert.False(DebugInfoFormatter.IsVisible(hud, debug));
+    }
+
+    [Fact]
+    public void IsVisible_AnySectionSelected_ReturnsTrue()
+    {
+        var hud = new HudSettings { Visible = true };
+        var debug = new DebugSettings { Enabled = true, ShowConfidence = true };
+
+        Assert.True(DebugInfoFormatter.IsVisible(hud, debug));
+    }
+
+    [Fact]
+    public void IsVisible_HudHidden_ReturnsFalse()
+    {
+        // 主 HUD 都关了，调试面板不该自己留着。
+        var hud = new HudSettings { Visible = false };
+
+        Assert.False(DebugInfoFormatter.IsVisible(hud, AllEnabled()));
+    }
+
+    [Fact]
+    public void IsVisible_Disabled_ReturnsFalse()
+    {
+        var hud = new HudSettings { Visible = true };
+        var debug = AllEnabled();
+        debug.Enabled = false;
+
+        Assert.False(DebugInfoFormatter.IsVisible(hud, debug));
+    }
+
+    [Fact]
     public void BuildLines_AllEnabled_ProducesDocumentedSections()
     {
         var lines = DebugInfoFormatter.BuildLines(CreateSnapshot(), AllEnabled());

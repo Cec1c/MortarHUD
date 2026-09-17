@@ -23,6 +23,7 @@ public partial class DebugOverlayWindow : Window
 {
     private IntPtr _handle;
     private HudSettings _hudSettings = new();
+    private DebugSettings _debugSettings = new();
 
     public DebugOverlayWindow()
     {
@@ -48,9 +49,35 @@ public partial class DebugOverlayWindow : Window
         ArgumentNullException.ThrowIfNull(debugSettings);
 
         _hudSettings = hudSettings;
+        _debugSettings = debugSettings;
         Renderer.Theme = DebugInfoFormatter.BuildDebugTheme(hudSettings.CurrentTheme);
+        SyncVisibility();
+    }
 
-        if (debugSettings.Enabled && hudSettings.Visible)
+    /// <summary>刷新面板内容。</summary>
+    public void UpdateContent(DebugSnapshot snapshot, DebugSettings debugSettings)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+        ArgumentNullException.ThrowIfNull(debugSettings);
+
+        _debugSettings = debugSettings;
+        Renderer.Update(DebugInfoFormatter.BuildLines(snapshot, debugSettings), "", "");
+        SyncVisibility();
+        Dispatcher.BeginInvoke(Reposition, System.Windows.Threading.DispatcherPriority.Loaded);
+    }
+
+    /// <summary>
+    /// 统一决定显示还是收起。
+    /// </summary>
+    /// <remarks>
+    /// 「面板有没有内容」不能拿 <see cref="DebugInfoFormatter.BuildLines"/> 的行数判断：
+    /// 流水线摘要是无条件追加的，只要 Enabled 为真就至少有一行，那样判据永远成立，
+    /// 用户没勾任何显示项时屏幕上就会留一块灰色底板。真正的判据见
+    /// <see cref="DebugInfoFormatter.IsVisible"/>。
+    /// </remarks>
+    private void SyncVisibility()
+    {
+        if (DebugInfoFormatter.IsVisible(_hudSettings, _debugSettings))
         {
             ShowWithoutActivation();
             Reposition();
@@ -59,13 +86,6 @@ public partial class DebugOverlayWindow : Window
         {
             Hide();
         }
-    }
-
-    /// <summary>刷新面板内容。</summary>
-    public void UpdateContent(DebugSnapshot snapshot, DebugSettings debugSettings)
-    {
-        Renderer.Update(DebugInfoFormatter.BuildLines(snapshot, debugSettings), "", "");
-        Dispatcher.BeginInvoke(Reposition, System.Windows.Threading.DispatcherPriority.Loaded);
     }
 
     private void ShowWithoutActivation()
@@ -106,5 +126,4 @@ public partial class DebugOverlayWindow : Window
     }
 
     /// <summary>供 App 判断是否需要显示（主 HUD 隐藏时 Debug 面板也隐藏）。</summary>
-    public bool ShouldShow(DebugSettings debugSettings) => debugSettings.Enabled && _hudSettings.Visible;
 }

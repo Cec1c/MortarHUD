@@ -35,6 +35,33 @@ public sealed record DebugSnapshot
 /// </remarks>
 public static class DebugInfoFormatter
 {
+    /// <summary>
+    /// 调试面板要不要显示。
+    /// </summary>
+    /// <remarks>
+    /// 只看 <see cref="DebugSettings.Enabled"/> 是不够的：用户可能打开了 Debug 却
+    /// 一个显示项都没勾，那样面板里只剩一块半透明底板——悬在屏幕上的灰色矩形。
+    /// <para>
+    /// 这里判的是「有没有勾选任何一项」，而**不是** <see cref="BuildLines"/> 是否为空：
+    /// 流水线摘要是无条件追加的，只要 Enabled 为真就至少有一行，拿行数判断会永远为真。
+    /// </para>
+    /// 逻辑放在 Core 而不是窗口里，是为了能用单元测试钉住。
+    /// </remarks>
+    public static bool IsVisible(HudSettings hud, DebugSettings debug)
+    {
+        ArgumentNullException.ThrowIfNull(hud);
+        ArgumentNullException.ThrowIfNull(debug);
+
+        var anySectionSelected = debug.ShowCursorAnchor
+            || debug.ShowRoiRectangle
+            || debug.ShowTiming
+            || debug.ShowConfidence
+            || debug.ShowRawOcrText
+            || debug.ShowParsedCoordinates;
+
+        return debug.Enabled && hud.Visible && anySectionSelected;
+    }
+
     public static IReadOnlyList<HudLine> BuildLines(DebugSnapshot snapshot, DebugSettings settings)
     {
         ArgumentNullException.ThrowIfNull(snapshot);
