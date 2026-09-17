@@ -114,6 +114,24 @@ public sealed class SettingsStore
             settings.SchemaVersion = 3;
         }
 
+        // v3 → v4：PageSegMode 默认从 6（单一文本块）换成 11（稀疏文本）。
+        //
+        // 坐标是「y 行在上、x 行在下」的两行稀疏文字，6 会把两行当成一个文本块
+        // 统一切分，实测会把末位数字读错（同一张图 A 读 99.75、C 读 99.73），
+        // 触发 PIPELINE_DISAGREEMENT 判失败。117 份实机采集回放：
+        // 6 → 成功 65 / 两票矛盾 16；11 → 成功 79 / 两票矛盾 5。
+        //
+        // 同样只在用户没动过这个值（还是旧默认 6）时才迁移。
+        if (settings.SchemaVersion < 4)
+        {
+            if (settings.Ocr is { PageSegMode: 6 })
+            {
+                settings.Ocr.PageSegMode = new OcrSettings().PageSegMode;
+            }
+
+            settings.SchemaVersion = 4;
+        }
+
         // 兜底：老文件里缺少的嵌套对象补上，避免 NRE。
         settings.General ??= new GeneralSettings();
         settings.Hotkeys ??= new HotkeySettings();

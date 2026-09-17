@@ -90,13 +90,23 @@ public class PreprocessorTests
     /// 这里刻意断言「不含 B」：B 在实机截图上 0/3 正确却要多花约 40ms，
     /// 拖垮 TDD §40 的 &lt;100ms 目标。它仍然可以手动选用。
     /// </remarks>
+    /// <summary>
+    /// Auto 里的流水线是<strong>量出来的</strong>，不是越多越好。
+    /// </summary>
+    /// <remarks>
+    /// 这条测试以前钉的是「A + C 且不含 B」。117 份实机采集回放之后 A 也被摘掉了：
+    /// 误读末位、丢前导数字都出在 A 身上，换成「C 的二值化 × 两种分页模式」之后，
+    /// TDD 要求的一致性规则下成功从 65/117 涨到 80/117、冲突从 16 次降到 5 次。
+    /// 多一个弱投票者只是多一次吵架机会（A + C + 第三种读数：冲突 23 次）。
+    /// A 和 B 都还留在设置页的下拉框里供手动选用。
+    /// </remarks>
     [Fact]
-    public void ResolveCandidates_Auto_ExcludesPipelineB()
+    public void ResolveCandidates_Auto_OnlyUsesTheMeasuredBest()
     {
         var candidates = PreprocessorFactory.ResolveCandidates("Auto");
 
-        Assert.Contains(candidates, p => p.Name == "A");
         Assert.Contains(candidates, p => p.Name == "C");
+        Assert.DoesNotContain(candidates, p => p.Name == "A");
         Assert.DoesNotContain(candidates, p => p.Name == "B");
     }
 

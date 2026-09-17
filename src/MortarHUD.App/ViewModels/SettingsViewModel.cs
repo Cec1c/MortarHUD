@@ -91,7 +91,7 @@ public sealed class SettingsViewModel : ObservableObject
     private string _tessdataPath = "";
     private string _ocrLanguage = "eng";
     private string _characterWhitelist = "0123456789xy.:-";
-    private int _pageSegMode = 6;
+    private int _pageSegMode = new OcrSettings().PageSegMode;
     private bool _requireDecimalPoint = true;
 
     // ---- Debug ----

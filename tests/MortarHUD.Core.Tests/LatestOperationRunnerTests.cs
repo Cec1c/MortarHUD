@@ -61,6 +61,56 @@ public class LatestOperationRunnerTests
         });
     }
 
+    /// <summary>
+    /// 用户动鼠标造成的取消必须报出来。
+    /// </summary>
+    /// <remarks>
+    /// 实机日志里 140 次采集有 23 次被静默丢弃，用户看到的就是「按了键没反应」。
+    /// 取消本身是对的（不许用错数据），错的是不吭声。
+    /// </remarks>
+    [Fact]
+    public async Task ActivityCancellation_ReportsDiscarded()
+    {
+        var runner = new LatestOperationRunner();
+        var pending = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var discarded = 0;
+
+        var running = runner.RunAsync(async token =>
+        {
+            await pending.Task;
+            token.ThrowIfCancellationRequested();
+        }, onDiscarded: () => Interlocked.Increment(ref discarded));
+
+        runner.CancelOnActivity();
+        pending.SetResult();
+        await running;
+
+        Assert.Equal(1, discarded);
+    }
+
+    /// <summary>被后续操作替代不是「用户动了鼠标」，不该打扰用户。</summary>
+    [Fact]
+    public async Task Supersession_DoesNotReportDiscarded()
+    {
+        var runner = new LatestOperationRunner();
+        var pending = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var discarded = 0;
+
+        var old = runner.RunAsync(async token =>
+        {
+            await pending.Task;
+            token.ThrowIfCancellationRequested();
+        }, onDiscarded: () => Interlocked.Increment(ref discarded));
+
+        var latest = runner.RunAsync(
+            _ => Task.CompletedTask, onDiscarded: () => Interlocked.Increment(ref discarded));
+
+        pending.SetResult();
+        await Task.WhenAll(old, latest);
+
+        Assert.Equal(0, discarded);
+    }
+
     [Fact]
     public async Task ExceptionReleasesGate()
     {

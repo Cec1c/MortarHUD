@@ -389,7 +389,9 @@ public sealed class HudRenderer : FrameworkElement
         {
             MortarStatusKind.OcrFailed or MortarStatusKind.InvalidCoordinate or MortarStatusKind.CaptureFailed
                 => _theme.ErrorColor,
-            MortarStatusKind.NoGunPosition => _theme.WarningColor,
+            // 「什么都没发生」用警告色而不是错误色：数据没被污染，只是这次没采到。
+            MortarStatusKind.NoGunPosition or MortarStatusKind.CaptureCancelled
+                or MortarStatusKind.AutoCalibrateSkipped => _theme.WarningColor,
             _ => _theme.SuccessColor,
         });
 

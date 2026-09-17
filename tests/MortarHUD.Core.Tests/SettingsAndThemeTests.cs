@@ -72,6 +72,42 @@ public sealed class SettingsAndThemeTests : IDisposable
         Assert.True(loaded.Debug.Enabled);
     }
 
+    /// <summary>
+    /// v3 → v4：PageSegMode 的旧默认 6 要迁到 11。
+    /// </summary>
+    /// <remarks>
+    /// 6（单一文本块）会把坐标的上下两行当成一个块统一切分，实测会把末位数字读错，
+    /// 触发 PIPELINE_DISAGREEMENT。这里的重点不是新值是多少，而是
+    /// <strong>只有用户没动过这个值时才迁移</strong>。
+    /// </remarks>
+    [Fact]
+    public void Load_MigratesDefaultPageSegModeFrom6To11()
+    {
+        var path = Path.Combine(_sandbox, "settings.json");
+        File.WriteAllText(path, """
+            { "schemaVersion": 3, "ocr": { "pageSegMode": 6 } }
+            """);
+
+        var settings = new SettingsStore(path).Load();
+
+        Assert.Equal(new OcrSettings().PageSegMode, settings.Ocr.PageSegMode);
+        Assert.Equal(MortarHudSettings.CurrentSchemaVersion, settings.SchemaVersion);
+    }
+
+    /// <summary>用户自己挑过 PageSegMode 就不能被迁移覆盖。</summary>
+    [Fact]
+    public void Load_KeepsCustomizedPageSegMode()
+    {
+        var path = Path.Combine(_sandbox, "settings.json");
+        File.WriteAllText(path, """
+            { "schemaVersion": 3, "ocr": { "pageSegMode": 3 } }
+            """);
+
+        var settings = new SettingsStore(path).Load();
+
+        Assert.Equal(3, settings.Ocr.PageSegMode);
+    }
+
     /// <summary>枚举以字符串写入，方便用户手改 JSON，也避免以后调整枚举顺序时读串。</summary>
     [Fact]
     public void Save_WritesEnumsAsStrings()

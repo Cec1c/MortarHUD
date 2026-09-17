@@ -234,7 +234,13 @@ public sealed class CoordinateRecognizer
 
         var best = groups.OrderByDescending(g => g.Count).First();
 
-        // 有冲突就拒绝，不能让新增的相似流水线用票数掩盖另一条的不同读数。
+        // 有冲突就拒绝，不能让新增的相似流水线用票数掩盖另一条的不同读数
+        // （ConfidencePolicyTests.LowConfidenceConflictCannotBeHiddenByMajority 钉着这条）。
+        //
+        // 「有冲突」在 Auto 下就是两票各读一个值。实测这两种读法几乎总有一边是错的，
+        // 而挑一个用下去正是 TDD §16 禁止的「静默使用错误数据」——宁可让用户重按。
+        // 真正该做的是<strong>从一开始就别让弱的那条进集成</strong>，
+        // 也就是 AutoCandidates 里那个「为什么是 C 而不是 A」的问题。
         if (groups.Count > 1)
         {
             return RecognitionOutcome.Failed("PIPELINE_DISAGREEMENT", attempts, totalTime);

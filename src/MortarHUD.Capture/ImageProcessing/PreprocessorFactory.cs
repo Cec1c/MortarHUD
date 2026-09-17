@@ -18,27 +18,28 @@ public static class PreprocessorFactory
     /// </summary>
     /// <remarks>
     /// <para>
-    /// 只跑 A + C，<strong>不含 B</strong>——这是 Benchmark 量出来的结论，不是拍脑袋。
+    /// 只跑 C，一条二值化流水线。
     /// </para>
     /// <para>
-    /// 基准数据（<c>docs/ocr-benchmark.md</c>，三张实机截图，**已抹光标锚点**的线上路径）：
-    /// C 3/3、B 2/3、A 1/3，A + C 交叉验证后 3/3。
-    /// 注意「已抹光标锚点」这个前提——benchmark 曾经漏传光标位置，
-    /// 量到的是线上不存在的配置，那时的 A/C 结论是反的。
+    /// 交叉验证并没有取消，只是换了多样性来源：<strong>引擎侧</strong>会用两种分页模式
+    /// （6 与 11）各读一遍，见 <c>OcrEngineFactory</c>。原来靠「A + C 两种二值化」凑两票，
+    /// 但实机数据表明 A 是弱的那一条——误读末位、丢前导数字都出在它身上。
     /// </para>
     /// <para>
-    /// B 每次要多花约 40ms 却不贡献任何正确答案，直接拖垮 TDD §40 的 &lt;100ms 目标，
-    /// 因此从 Auto 里摘掉。它仍然保留在设置页的下拉框里，遇到新地图可以手动试。
+    /// 117 份实机采集回放（TDD 要求的一致性规则：成功读数必须全部一致）：
     /// </para>
+    /// <list type="bullet">
+    /// <item>A + C：成功 65/117，冲突 16 次。</item>
+    /// <item><strong>C（两种分页模式）：成功 80/117，冲突 5 次。</strong></item>
+    /// <item>A + C + 第三种读数：冲突反而涨到 23 次——多一个弱投票者只是多一次吵架机会。</item>
+    /// </list>
     /// <para>
-    /// 待定：当前这批 fixture 上 A 一次都没独立命中过（1/3），
-    /// 跑它只是多花约 50ms 并带来「两票矛盾」的风险。
-    /// 是继续用它做交叉验证、还是缩成单跑 C，等基准集扩到 30 张再定。
+    /// B 每次要多花约 40ms 却不贡献任何正确答案，直接拖垮 TDD §40 的 &lt;100ms 目标。
+    /// A 和 B 都仍然保留在设置页的下拉框里，遇到新地图可以手动试。
     /// </para>
     /// </remarks>
     public static IReadOnlyList<IImagePreprocessor> AutoCandidates { get; } =
     [
-        new PipelineA(),
         new PipelineC(),
     ];
 

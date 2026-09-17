@@ -177,6 +177,8 @@ public static class HudLayoutFormatter
         MortarStatusKind.NoGunPosition => "未记录炮位",
         MortarStatusKind.InvalidCoordinate => "坐标超出范围",
         MortarStatusKind.CaptureFailed => "截图失败",
+        MortarStatusKind.CaptureCancelled => "光标移动，已取消",
+        MortarStatusKind.AutoCalibrateSkipped => "地图没打开",
         _ => "",
     };
 
@@ -189,6 +191,8 @@ public static class HudLayoutFormatter
         MortarStatusKind.OcrFailed => "目标未改变",
         MortarStatusKind.InvalidCoordinate => "目标未改变",
         MortarStatusKind.CaptureFailed => "目标未改变",
+        MortarStatusKind.CaptureCancelled => "目标未改变",
+        MortarStatusKind.AutoCalibrateSkipped => "再按一次 M",
         _ => null,
     };
 }

@@ -608,11 +608,8 @@ public partial class App : Application
                 if (_captureService is null || _session is null || _hud is null) return;
                 if (!isGun && _session.Gun is null)
                 {
-                    _operations.TryCommit(token, () =>
-                    {
-                        _session.ReportFailure(MortarStatusKind.NoGunPosition, "NO_GUN_POSITION");
-                        _hud.NotifyStatusChanged();
-                    });
+                    _operations.TryCommit(
+                        token, () => ReportStatus(MortarStatusKind.NoGunPosition, "NO_GUN_POSITION"));
                     return;
                 }
                 if (automatic)
@@ -621,20 +618,32 @@ public partial class App : Application
                     if (!CaptureContext.TryGetCursor(out initialCursor)
                         || !CaptureContext.IsClientCenter(foreground, initialCursor))
                     {
-                        _logger?.LogInformation("自动校准跳过：光标尚未归位到前台窗口中心，请手动记录炮位");
+                        // 光标不在窗口中心 = 游戏没有把光标复位 = 地图多半没打开。
+                        //
+                        // 这里以前只写日志。用户界面上什么都看不到，以为按键没生效就再按一次 M，
+                        // 而 M 在游戏里是开关——第二下正好把地图关上，于是采到没有坐标读数的画面。
+                        // 必须让用户看见，这条链路才闭合。
+                        _logger?.LogInformation("自动校准跳过：光标未回中（地图多半没打开）");
+                        _operations.TryCommit(
+                            token, () => ReportStatus(MortarStatusKind.AutoCalibrateSkipped, "MAP_NOT_OPEN"));
                         return;
                     }
                 }
-                var attempts = automatic ? 2 : 3;
+
+                // 自动校准的重试次数走设置（TDD §18）。以前这里硬编码 2，
+                // AutoCalibrateAttempts 只在 Clone() 里被读，是个死配置。
+                var attempts = automatic
+                    ? Math.Clamp(_settings.Hotkeys.AutoCalibrateAttempts, 1, 10)
+                    : 3;
                 for (var attempt = 0; attempt < attempts; attempt++)
                 {
                     if (attempt > 0) await Task.Delay(automatic ? 150 : 120, token);
                     token.ThrowIfCancellationRequested();
-                    if (!ContextUnchanged()) return;
+                    if (DiscardIfContextChanged(token, "采集前")) return;
                     _debugObserver?.BeginRequest();
                     var outcome = await _captureService.CaptureAsync(token);
                     token.ThrowIfCancellationRequested();
-                    if (!ContextUnchanged()) return;
+                    if (DiscardIfContextChanged(token, "采集后")) return;
                     if (outcome.Recognition.Error == "BUSY") return;
                     outcome = _debugObserver?.AttachImages(outcome) ?? outcome;
                     _debugObserver?.WriteResult(outcome, isGun);
@@ -652,16 +661,42 @@ public partial class App : Application
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "采集失败");
-                _operations.TryCommit(token, () =>
-                {
-                    _session?.ReportFailure(MortarStatusKind.CaptureFailed, ex.Message);
-                    _hud?.NotifyStatusChanged();
-                });
+                _operations.TryCommit(
+                    token, () => ReportStatus(MortarStatusKind.CaptureFailed, ex.Message));
             }
-        });
+        },
+        // 用户动鼠标把采集取消掉时，走的是取消异常这条路径，回不到上面的 TryCommit。
+        // 不在这里报一声，它就又是一次静默无响应。
+        onDiscarded: () => Dispatcher.BeginInvoke(
+            () => ReportStatus(MortarStatusKind.CaptureCancelled, "CONTEXT_CHANGED")));
 
         bool ContextUnchanged() => CaptureContext.Foreground == foreground
             && CaptureContext.TryGetCursor(out var cursor) && cursor == initialCursor;
+
+        // 结果作废必须让用户看见。以前这两处是静默 return，表现就是「按了键没反应」——
+        // 实机 140 次采集里有 23 次是这样无声消失的，用户只会以为程序卡了。
+        bool DiscardIfContextChanged(CancellationToken token, string when)
+        {
+            if (ContextUnchanged())
+            {
+                return false;
+            }
+
+            _logger?.LogInformation(
+                "采集 {Kind} 作废（{When}）：光标或前台窗口已变化",
+                isGun ? "炮位" : "目标", when);
+
+            _operations.TryCommit(
+                token, () => ReportStatus(MortarStatusKind.CaptureCancelled, "CONTEXT_CHANGED"));
+            return true;
+        }
+    }
+
+    /// <summary>把一条状态推给 HUD 并记进会话。只动提示，不动炮位/目标（TDD §16）。</summary>
+    private void ReportStatus(MortarStatusKind kind, string error)
+    {
+        _session?.ReportFailure(kind, error);
+        _hud?.NotifyStatusChanged();
     }
 
     private void ApplyCapture(CaptureOutcome outcome, bool isGun)
