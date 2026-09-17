@@ -155,42 +155,11 @@ public partial class OverlayWindow : Window
         var width = ActualWidth * scale;
         var height = ActualHeight * scale;
 
-        var (x, y) = ResolvePosition(workArea, width, height, _settings.Anchor, _settings.OffsetX, _settings.OffsetY, scale);
+        // 落位算法放在 Core，因为那里能写单元测试——「HUD 被推出屏幕后找不回来」
+        // 就是漏了那里的边界钳制。见 HudPlacement。
+        var (x, y) = HudPlacement.Resolve(workArea, width, height, _settings.Anchor, _settings.OffsetX, _settings.OffsetY, scale);
 
         OverlayWindowController.MoveToPhysical(_handle, (int)Math.Round(x), (int)Math.Round(y));
-    }
-
-    private static (double X, double Y) ResolvePosition(
-        System.Drawing.Rectangle workArea,
-        double width,
-        double height,
-        HudAnchor anchor,
-        double offsetX,
-        double offsetY,
-        double scale)
-    {
-        var dx = offsetX * scale;
-        var dy = offsetY * scale;
-
-        var x = anchor switch
-        {
-            HudAnchor.TopLeft or HudAnchor.CenterLeft or HudAnchor.BottomLeft
-                => workArea.Left + dx,
-            HudAnchor.TopCenter or HudAnchor.Center or HudAnchor.BottomCenter
-                => workArea.Left + (workArea.Width - width) / 2 + dx,
-            _ => workArea.Right - width - dx,
-        };
-
-        var y = anchor switch
-        {
-            HudAnchor.TopLeft or HudAnchor.TopCenter or HudAnchor.TopRight
-                => workArea.Top + dy,
-            HudAnchor.CenterLeft or HudAnchor.Center or HudAnchor.CenterRight
-                => workArea.Top + (workArea.Height - height) / 2 + dy,
-            _ => workArea.Bottom - height - dy,
-        };
-
-        return (x, y);
     }
 
     // ------------------------------------------------------------ 编辑模式拖动
