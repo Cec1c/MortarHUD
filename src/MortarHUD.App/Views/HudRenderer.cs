@@ -344,8 +344,17 @@ public sealed class HudRenderer : FrameworkElement
     /// 解析字体，找不到就退回系统 UI 字体。
     /// </summary>
     /// <remarks>
+    /// <para>
     /// TDD §23 明确要求「不应依赖程序附带第三方字体文件」——
     /// 用户机器上没装 Cascadia Mono 是完全正常的，此时必须还能用。
+    /// </para>
+    /// <para>
+    /// 主题字体（默认 Cascadia Mono）是等宽的，数字不会跳宽，但它<strong>没有中文字形</strong>，
+    /// 而 HUD 的状态行是中文（「炮位已锁定」这类）。不给后备的话，汉字会落到 WPF
+    /// 自己的复合字体链上——落到哪个字体、什么字重都不受控，同一块 HUD 里
+    /// 数字和汉字就一副粗一副细。这里把后备钉成界面用的那套字体，
+    /// 两种文字至少是同一个设计。
+    /// </para>
     /// </remarks>
     private static Typeface ResolveTypeface(string familyName, FontStyle style, FontWeight weight)
     {
@@ -356,7 +365,9 @@ public sealed class HudRenderer : FrameworkElement
 
         try
         {
-            var typeface = new Typeface(new FontFamily(familyName), style, weight, FontStretches.Normal);
+            // FontFamily 支持逗号分隔的后备列表，WPF 按字形逐个回退。
+            var family = new FontFamily($"{familyName}, {CjkFallbackFamily}");
+            var typeface = new Typeface(family, style, weight, FontStretches.Normal);
             return typeface.FontFamily.FamilyNames.Count > 0 ? typeface : FallbackTypeface;
         }
         catch (ArgumentException)
@@ -364,6 +375,13 @@ public sealed class HudRenderer : FrameworkElement
             return FallbackTypeface;
         }
     }
+
+    /// <summary>HUD 里中文的后备字体。</summary>
+    /// <remarks>
+    /// 挑 Microsoft YaHei UI 是因为它就是设置界面的字体，两处看起来是一套东西；
+    /// 而且从 Vista 起每台 Windows 都自带，不违反 TDD §23。
+    /// </remarks>
+    private const string CjkFallbackFamily = "Microsoft YaHei UI";
 
     private static FontWeight ParseWeight(string? name) => name switch
     {

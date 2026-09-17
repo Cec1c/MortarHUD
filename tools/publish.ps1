@@ -40,11 +40,9 @@ if (Get-ChildItem -LiteralPath $destination -Recurse -File -Filter '*ffmpeg*') {
 Get-ChildItem -LiteralPath $destination -Filter '*.deps.json' | ForEach-Object {
     if (Select-String -LiteralPath $_.FullName -Pattern 'ffmpeg') { throw '依赖清单仍引用 FFmpeg' }
 }
-@'
-@echo off
-cd /d "%~dp0"
-start "" "%~dp0MortarHUD.exe"
-'@ | Set-Content -LiteralPath (Join-Path $destination 'run.cmd') -Encoding ascii
+# 产物里不再放 run.cmd。它当初是为了让用户从任意工作目录启动时能找到同目录的
+# Models\ 与原生库；改成扁平布局、且 IncludeAllContentForSelfExtract 会把内容
+# 解压到 %TEMP%\.net\ 之后，工作目录就不再影响加载了，双击 exe 即可。
 $files = Get-ChildItem -LiteralPath $destination -Recurse -File
 [pscustomobject]@{
     Mode = $Mode

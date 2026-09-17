@@ -14,7 +14,8 @@
         SizeToContent="WidthAndHeight"
         WindowStartupLocation="Manual"
         UseLayoutRounding="True"
-        SnapsToDevicePixels="True">
+        SnapsToDevicePixels="True"
+                 TextOptions.TextFormattingMode="Display" TextOptions.TextRenderingMode="ClearType">
 
     <!--
         HUD 本体只有一个自绘元素（见 HudRenderer）。

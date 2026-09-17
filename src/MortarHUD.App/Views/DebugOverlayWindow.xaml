@@ -13,7 +13,8 @@
         ShowActivated="False"
         SizeToContent="WidthAndHeight"
         WindowStartupLocation="Manual"
-        UseLayoutRounding="True">
+        UseLayoutRounding="True"
+                 TextOptions.TextFormattingMode="Display" TextOptions.TextRenderingMode="ClearType">
 
     <!--
         Debug Overlay 与正常 HUD 是两个窗口（TDD §34）。
