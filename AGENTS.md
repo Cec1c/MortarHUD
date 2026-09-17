@@ -72,6 +72,13 @@ dist\MortarHUD\MortarHUD.exe --selftest
 # 设置窗口离屏渲染成 PNG（窗口不显示、不抢焦点）
 dist\MortarHUD\MortarHUD.exe --screenshot <输出目录>
 
+# 追加 --expanded：把所有折叠项展开后再渲染。
+# 这条很重要 —— 折叠项展开后的排版本来只能靠人工看，有了它就能自动核对了。
+dist\MortarHUD\MortarHUD.exe --screenshot <输出目录> --expanded
+
+# 追加 --compact：用 920x680 渲染（默认 1040x760）
+dist\MortarHUD\MortarHUD.exe --screenshot <输出目录> --compact
+
 # OCR 基准测试（TDD §17），会生成 docs\ocr-benchmark.md
 "C:/dotnet10/dotnet.exe" tools/MortarHUD.Benchmark/bin/Release/net10.0-windows/MortarHUD.Benchmark.dll
 
@@ -197,14 +204,21 @@ src/
 - 长时间使用后 M 和中键是否仍然可靠（日志里有 `[输入]` 前缀的记录）
 - 光标没归位时是否正确跳过，而不是读到别处的坐标
 
-### 🟡 3. 设置界面只做过离屏渲染验证
+### 🟡 3. 设置界面：初态与展开态已核对，交互态待人工
 
-视觉重做（配色、间距、八类控件模板、卡片与滚动条）已完成，三页（日常使用 / 外观 / 诊断）
-的初始态截图逐页核对过：栅格、圆角、表面层次都符合规格。
+视觉重做（配色、间距、八类控件模板、卡片、滚动条、ToolTip）已完成。三页（日常使用 / 外观 / 诊断）
+的**初始态**与**展开态**（`--screenshot <目录> --expanded`）都已逐页核对：
+栅格、圆角、表面层次、滑块轨道都符合规格。
 
-但 `--screenshot` 只渲染初始态，**没有验证**的只剩交互态与真实窗口行为：
-真实窗口焦点、键盘导航、滚动后的内容、折叠项展开后的排版、下拉弹层、高 DPI，
+`--screenshot` 这条路径看不到的只剩真正的交互态：悬停、键盘焦点、下拉弹层、高 DPI，
 以及设置应用、保存主题、删除主题这些实际操作。
+
+**已知的两处未收口**（都不影响使用，记录备查）：
+
+- 「颜色编辑器」（外观页折叠项里）还是旧视觉语言：`Views/ColorEditor.xaml` 自己写了
+  `#3A3D42` / `#26282C` 和圆角 3，没有跟着这次重做走。它只在展开折叠项后才可见。
+- 卡片内按钮的悬停底色用的是新增的 `SurfaceHoverBrush`；`SurfaceAltBrush` 已废弃，
+  不要再把它拿回来当通用底色用——那正是这次「层次压平」的病根。
 
 ### ⚪ 5. 从未验证过的 TDD 验收项
 
