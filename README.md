@@ -92,7 +92,7 @@ First run:
 
 All of them are rebindable. Target capture defaults to the middle mouse button rather than F7 because the function-key row tends to clash with the game's own bindings.
 
-When a read fails the HUD says so and keeps the previous target — it never carries on with a coordinate that might be wrong.
+When a read fails the HUD says why and keeps the previous target — it never carries on with a coordinate that might be wrong. A capture that never happens is reported too ("Map not open", "Cursor moved, cancelled") instead of silently doing nothing.
 
 ### Auto-calibration with the map key
 
@@ -165,7 +165,7 @@ A fallback for when the language data is missing. Its glyph library is learned f
 dotnet run --project tools/MortarHUD.Benchmark -- --gen-templates
 ```
 
-It currently covers `x y . 0 1 4 5 6 7 8 9` and is **missing 2 and 3** (they never appeared in the sample screenshots). Unknown glyphs are reported as `?` rather than guessed, and the parser then fails the capture. Tesseract covers all ten digits, which is why it is the production default.
+It currently covers `x y . 0 1 4 5 6 7 8 9` and is **missing 2 and 3** (the three baseline screenshots never happened to contain them). Unknown glyphs are reported as `?` rather than guessed, and the parser then fails the capture. Tesseract covers all ten digits, which is why it is the production default.
 
 ## Configuration
 
@@ -238,7 +238,7 @@ A wrong recognition counts as a failure and returns non-zero, so you can't get a
 | Self-contained folder | `publish.cmd folder` | ~227 MB | nothing |
 | Framework-dependent | `publish.cmd runtime` | ~60 MB | .NET 10 desktop runtime |
 
-Output goes to `dist\MortarHUD-next-<mode>\`; a non-empty directory is refused so old and new DLLs never get mixed. The portable build is a **genuine single file** — `Models\` (OCR language data and glyph library) is packed inside too and extracted to `%TEMP%\.net\` at runtime. Most of the size is the .NET runtime and `OpenCvSharpExtern.dll` (59 MB); the project's own three DLLs add up to 0.25 MB. Getting down to 95 MB takes single-file compression plus dropping OpenCV's FFmpeg plugin and Tesseract's x86 libraries.
+Output goes to `dist\MortarHUD-next-<mode>\`; a non-empty directory is refused so old and new DLLs never get mixed. The portable build is a **genuine single file** — `Models\` (OCR language data and glyph library) is packed inside too and extracted to `%TEMP%\.net\` at runtime. Most of the size is the .NET runtime and `OpenCvSharpExtern.dll` (59 MB); the project's own four DLLs add up to under 0.5 MB. Getting down to 95 MB takes single-file compression plus dropping OpenCV's FFmpeg plugin and Tesseract's x86 libraries.
 
 > [!NOTE]
 > Single-file mode has to extract the native libraries to `%TEMP%\.net\` before loading them, so it starts a little slower than folder mode — and a smaller download does not mean less disk usage. Use `folder` if startup time matters.
@@ -256,7 +256,7 @@ Things that need a human and cannot be automated:
 > [!IMPORTANT]
 > In exclusive fullscreen the HUD may be invisible or screen capture may fail. That is an inherent limitation of an external tool and will not be worked around by injecting into the process. **Borderless windowed mode is recommended.**
 
-Also: the template engine is missing digits 2 and 3, there is no installer, and the default ROI was measured at 1080p — if your game UI scale differs a lot, adjust it once via **Diagnostics → Inspect a single recognition**.
+Also: the template engine is missing digits 2 and 3 (it is only reached when the language data is unavailable), there is no installer, and the default ROI was measured at 1080p — if your game UI scale differs a lot, adjust it once via **Diagnostics → Inspect a single recognition**.
 
 ## Development
 
@@ -278,6 +278,12 @@ Logs live in `%AppData%\MortarHUD\Logs\yyyy-MM-dd.log` and record startup, shutd
 
 > [!NOTE]
 > Picking up development? Read **[AGENTS.md](AGENTS.md)** first — environment gotchas, architecture, and the traps already stepped on are all in there.
+
+## Community
+
+QQ group (Chinese) **2166037429** — questions, screenshots of failed reads, feature requests.
+
+When reporting a recognition problem, include the logs from `%AppData%\MortarHUD\Logs\` and the files produced by **Diagnostics -> Collect the next 10 captures**; it saves a lot of back and forth.
 
 ---
 
