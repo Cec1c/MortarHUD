@@ -1,4 +1,5 @@
 using MortarHUD.Core.Configuration;
+using MortarHUD.Localization;
 using MortarHUD.Core.Themes;
 using Xunit;
 
@@ -70,6 +71,33 @@ public sealed class SettingsAndThemeTests : IDisposable
         Assert.Equal(-42, loaded.Roi.OffsetX);
         Assert.Equal(0.42, loaded.Ocr.MinimumConfidence, precision: 9);
         Assert.True(loaded.Debug.Enabled);
+    }
+
+    /// <summary>
+    /// 没有配置文件时（首次启动），界面语言按系统语言挑。
+    /// </summary>
+    /// <remarks>
+    /// 断言两边都用同一台机器上的检测结果，所以这条测试在中文和英文的 CI 上都能过。
+    /// 检测规则本身由 <c>LocTableTests</c> 用注入的语言逐条钉住。
+    /// </remarks>
+    [Fact]
+    public void Load_MissingFile_PicksLanguageFromSystem()
+    {
+        var store = new SettingsStore(Path.Combine(_sandbox, "settings.json"));
+
+        Assert.Equal(SystemLanguage.Detect(), store.Load().General.Language);
+    }
+
+    /// <summary>用户挑过的语言不能被「首次启动」的逻辑覆盖。</summary>
+    [Fact]
+    public void Load_KeepsChosenLanguage()
+    {
+        var path = Path.Combine(_sandbox, "settings.json");
+        File.WriteAllText(path, """
+            { "schemaVersion": 4, "general": { "language": "en" } }
+            """);
+
+        Assert.Equal("en", new SettingsStore(path).Load().General.Language);
     }
 
     /// <summary>

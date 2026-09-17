@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using MortarHUD.Core.Themes;
+using MortarHUD.Localization;
 
 namespace MortarHUD.Core.Configuration;
 
@@ -29,7 +30,7 @@ public sealed class SettingsStore
     {
         if (!File.Exists(_settingsPath))
         {
-            return new MortarHudSettings();
+            return CreateFirstRunDefaults();
         }
 
         try
@@ -38,7 +39,7 @@ public sealed class SettingsStore
             var settings = JsonSerializer.Deserialize<MortarHudSettings>(json, SerializerOptions);
             if (settings is null)
             {
-                return new MortarHudSettings();
+                return CreateFirstRunDefaults();
             }
 
             return Migrate(settings);
@@ -46,8 +47,22 @@ public sealed class SettingsStore
         catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException)
         {
             TryQuarantineCorruptFile(ex);
-            return new MortarHudSettings();
+            return CreateFirstRunDefaults();
         }
+    }
+
+    /// <summary>
+    /// 没有可用配置时的起点：按系统语言挑界面语言。
+    /// </summary>
+    /// <remarks>
+    /// 坏文件被隔离之后也走这里——那种情况实质上等于重新装一次，
+    /// 沿用「首次启动」的规则比硬塞中文更合理。
+    /// </remarks>
+    private static MortarHudSettings CreateFirstRunDefaults()
+    {
+        var settings = new MortarHudSettings();
+        settings.General.Language = SystemLanguage.Detect();
+        return settings;
     }
 
     public void Save(MortarHudSettings settings)

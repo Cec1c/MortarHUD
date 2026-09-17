@@ -89,6 +89,31 @@ public sealed class LocTableTests
         Assert.Equal(expected, Loc.IsEnglishCode(code));
     }
 
+    /// <summary>
+    /// 首次启动按系统语言挑默认界面语言：中文系统用中文，其余一律英文。
+    /// </summary>
+    /// <remarks>
+    /// 非中文的系统也给英文而不是中文——这个程序面向国际服玩家，
+    /// 一个德语系统的人看到英文比看到中文有用。
+    /// </remarks>
+    [Theory]
+    [InlineData("zh-CN", "zh-CN")]
+    [InlineData("zh-TW", "zh-CN")]
+    [InlineData("zh-Hans", "zh-CN")]
+    [InlineData("en-US", "en")]
+    [InlineData("en-GB", "en")]
+    [InlineData("ja-JP", "en")]
+    [InlineData("de-DE", "en")]
+    [InlineData("", "en")]
+    public void SystemLanguagePicksChineseOnlyForChinese(string culture, string expected)
+    {
+        var info = string.IsNullOrEmpty(culture)
+            ? System.Globalization.CultureInfo.InvariantCulture
+            : new System.Globalization.CultureInfo(culture);
+
+        Assert.Equal(expected, SystemLanguage.Detect(info));
+    }
+
     /// <summary>占位符模板走 string.Format，参数按顺序填进去。</summary>
     [Fact]
     public void FormatFillsPlaceholders()
