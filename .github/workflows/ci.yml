@@ -24,7 +24,15 @@ jobs:
           # 版本由仓库根的 global.json 钉住（10.0.401，rollForward latestFeature），
           # 这里只声明大版本，避免和 global.json 各写一份、改一处忘一处。
           dotnet-version: '10.0.x'
-          cache: true
+
+      # setup-dotnet 自带的 cache 开关只认 packages.lock.json，本仓库没有那个文件。
+      # 手动缓存全局包目录：这个项目的 OpenCvSharp 包很大，命中一次省一分钟。
+      # 缓存未命中只是退回普通还原，不影响正确性。
+      - uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', 'Directory.Build.props', 'global.json') }}
+          restore-keys: ${{ runner.os }}-nuget-
 
       - name: 构建
         run: dotnet build MortarHUD.sln -c Release --nologo
