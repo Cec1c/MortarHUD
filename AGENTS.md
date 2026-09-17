@@ -45,7 +45,7 @@ RNG 152m
 "C:/dotnet10/dotnet.exe" test MortarHUD.sln -c Release
 
 # 发布（输出到 dist\MortarHUD-next-<模式>\，目录非空会拒绝发布）
-publish.cmd              # portable（默认）：单文件压缩 / 约 97MB
+publish.cmd              # portable（默认）：单文件压缩 / 约 95MB
 publish.cmd folder       # 备选：文件夹布局（287 个文件），启动更快 / 约 227MB
 publish.cmd runtime      # 框架依赖：目标机需装 .NET 10 桌面运行时
 ```
@@ -261,6 +261,7 @@ src/
 | **Raw Input 把按下、长按重复、松开都报上来** | 松开 M 也触发一次校准，还会取消掉刚发起的那次 | `ObservedKeyState` 按 (设备, 键) 记状态，只认新的按下；松开只清理 |
 | **`WM_INPUT` 处理完不调 `DefWindowProc`** | 系统的输入缓冲不会被清理 | 返回 `DefWindowProc(hWnd, msg, wParam, lParam)` |
 | **以仓库根为工作目录直跑基准工具的 dll** | OpenCV 原生库加载失败：`DllNotFoundException: OpenCvSharpExtern`（报错说的是"或它的某个依赖"，很容易误判成缺文件） | 用 `dotnet run --project tools/MortarHUD.Benchmark`，它会先把工作目录切到项目目录；或先 `cd` 到它的 bin 输出目录再跑 |
+| **单文件发布漏了 `IncludeAllContentForSelfExtract`** | Tesseract 的 .NET 包装按 `x64/tesseract50.dll` 这类相对路径找原生库，标准单文件模式解压后没有这个目录结构 → 加载失败 → **静默**退回模板引擎（缺数字 2、3，复杂背景上常切不出字形），表现为「怎么点都识别不出来」，日志里只有一行 `引擎=Template` | 发布时加 `-p:IncludeAllContentForSelfExtract=true`（`tools/publish.ps1` 已带）。**改了发布参数后用发布产物跑一次 `--selftest`，确认日志里 `引擎=Tesseract` 而不是 `Template`** |
 | **HUD 位置由 `anchor + offset` 算出，`offset` 存的是 DIP** | 拖动时除以 DPI 缩放、落位时乘回来，两边不一致就会漂移 | 落位算法统一走 `Core/Session/HudPlacement`，并带"至少留 40px 可见"的钳制 |
 | **`additionalProbingPaths` 指向扁平目录** | 只认 NuGet 布局 `libs/<包名>/<版本>/...`，扁平目录会报 "assembly specified in the dependency manifest was not found" | 现在默认不再组织成 libs 布局（`OrganizeLegacyLayout=false`，产物是标准扁平布局）。只有要恢复旧布局才需要 `tools/organize-publish.ps1` |
 | **Python 用 `utf-8` 读带 BOM 的文件** | 不会剥掉 BOM，再写一次就变成双 BOM | 用 `utf-8-sig` 或 `lstrip('\ufeff')` |

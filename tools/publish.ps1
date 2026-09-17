@@ -19,10 +19,16 @@ $single = if ($Mode -eq 'folder') { 'false' } else { 'true' }
 $selfContained = if ($Mode -eq 'runtime') { 'false' } else { 'true' }
 $compress = if ($NoCompression -or $Mode -eq 'folder') { 'false' } else { 'true' }
 $project = Join-Path $repo 'src\MortarHUD.App\MortarHUD.App.csproj'
+# IncludeAllContentForSelfExtract 不是可选项，是必需的：
+# Tesseract 的 .NET 包装按 x64/tesseract50.dll 这类相对路径找原生库，标准单文件模式
+# 解压后没有这个目录结构，加载会失败——而失败是**静默**的，程序会退回模板匹配引擎
+# （缺数字 2、3，在复杂地图背景上还常切不出字形，表现为「怎么点都识别不出来」）。
+# 打开这个开关会把全部文件解压到 %TEMP%\.net\ 并把 AppContext.BaseDirectory 指过去，
+# 代价是首次启动多一次解压、磁盘多占一份解压缓存。
 & $sdk publish $project -c Release -r win-x64 --self-contained $selfContained `
     "-p:PublishSingleFile=$single" "-p:EnableCompressionInSingleFile=$compress" `
-    -p:IncludeNativeLibrariesForSelfExtract=true -p:OrganizeLegacyLayout=false `
-    -p:NuGetAudit=false -o $destination --nologo
+    -p:IncludeNativeLibrariesForSelfExtract=true -p:IncludeAllContentForSelfExtract=true `
+    -p:OrganizeLegacyLayout=false -p:NuGetAudit=false -o $destination --nologo
 if ($LASTEXITCODE -ne 0) { throw "发布失败，退出码 $LASTEXITCODE" }
 
 $buildDeps = Join-Path $repo 'src\MortarHUD.App\bin\Release\net10.0-windows\win-x64\MortarHUD.deps.json'

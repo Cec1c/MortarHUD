@@ -219,11 +219,11 @@ dist\MortarHUD\MortarHUD.exe --selftest        # 退出码 0 表示通过
 
 | 方式 | 命令 | 体积 | 目标机器需要 |
 | --- | --- | --- | --- |
-| **单文件便携版**（默认） | `publish.cmd` | ~97 MB | 什么都不用装 |
+| **单文件便携版**（默认） | `publish.cmd` | ~95 MB | 什么都不用装 |
 | 自包含文件夹 | `publish.cmd folder` | ~227 MB | 什么都不用装 |
 | 框架依赖 | `publish.cmd runtime` | ~60 MB | .NET 10 桌面运行时 |
 
-输出到 `dist\MortarHUD-next-<模式>\`，目录非空时拒绝发布（避免新旧 DLL 混在一起）。体积大头是 .NET 运行时和 `OpenCvSharpExtern.dll`（59 MB）；项目自身三个 DLL 加起来 0.25 MB。压到 97 MB 靠的是单文件压缩、剔掉 OpenCV 的 FFmpeg 插件和 Tesseract 的 x86 库。
+输出到 `dist\MortarHUD-next-<模式>\`，目录非空时拒绝发布（避免新旧 DLL 混在一起）。便携版是**真正的单文件**——`Models\`（OCR 语言包与字形库）也一并打包，运行时释放到 `%TEMP%\.net\`。体积大头是 .NET 运行时和 `OpenCvSharpExtern.dll`（59 MB）；项目自身三个 DLL 加起来 0.25 MB。压到 95 MB 靠的是单文件压缩、剔掉 OpenCV 的 FFmpeg 插件和 Tesseract 的 x86 库。
 
 > [!NOTE]
 > 单文件模式启动时要把原生库解压到 `%TEMP%\.net\` 再加载，比文件夹模式慢一点，分发体积的下降也不等于磁盘占用下降。在意启动速度就用 `folder`。
