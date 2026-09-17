@@ -62,6 +62,16 @@ public sealed class FixtureCase
     public int RoiHeight { get; set; }
 
     /// <summary>
+    /// 光标在这块 ROI 内的坐标，用于抹掉光标锚点。
+    /// </summary>
+    /// <remarks>
+    /// 公式与 <c>MortarCaptureService</c> 线上一致（光标物理坐标减 ROI 原点）。
+    /// Benchmark 声称「量的是线上路径」，就必须把它传下去，
+    /// 否则测的是「不抹锚点」的配置，结论会指向错误的流水线。
+    /// </remarks>
+    public System.Drawing.Point CursorInRoi => new(CursorX - RoiX, CursorY - RoiY);
+
+    /// <summary>
     /// 手工实测的坐标文字包围盒（截图绝对像素）。
     /// </summary>
     /// <remarks>

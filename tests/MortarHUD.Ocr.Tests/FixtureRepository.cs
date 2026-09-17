@@ -18,6 +18,20 @@ public sealed class FixtureCase
     public int RoiY { get; set; }
     public int RoiWidth { get; set; }
     public int RoiHeight { get; set; }
+
+    /// <summary>
+    /// 光标在这块 ROI 内的坐标，交给识别器用于抹掉光标锚点。
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 公式与 <c>MortarCaptureService</c> 线上的算法完全一致：光标物理坐标减去 ROI 原点。
+    /// </para>
+    /// <para>
+    /// <strong>测试必须把它传下去。</strong>不传等同于「不抹锚点」，
+    /// 而线上每一条路径都会传——那是线上不存在的配置。
+    /// </para>
+    /// </remarks>
+    public System.Drawing.Point CursorInRoi => new(CursorX - RoiX, CursorY - RoiY);
 }
 
 public sealed class FixtureManifest

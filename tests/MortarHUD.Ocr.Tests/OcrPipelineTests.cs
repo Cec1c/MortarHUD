@@ -12,9 +12,17 @@ namespace MortarHUD.Ocr.Tests;
 /// 端到端 OCR 测试：真实截图 → 预处理 → OCR → 解析 → 校验。
 /// </summary>
 /// <remarks>
+/// <para>
 /// 这是整个项目最有价值的一组测试。TDD §47 的验收条件里
 /// 「地图缩放不影响坐标读取」「OCR 错误不会静默使用错误数据」
 /// 归根到底都要靠这组用例来保证。
+/// </para>
+/// <para>
+/// <strong>必须传 <see cref="FixtureCase.CursorInRoi"/>。</strong>
+/// 线上的识别链路会先用已知的光标位置抹掉游戏画的光标锚点（箭头和括号），
+/// 不传就等于在测「不抹锚点」的配置——线上没有这种配置，
+/// 量出来的失败也就不代表线上会失败。
+/// </para>
 /// </remarks>
 [Collection("OCR")]
 public class OcrPipelineTests
@@ -85,7 +93,7 @@ public class OcrPipelineTests
             using var roi = FixtureRepository.LoadRoi(fixture);
 
             var outcome = await harness.Recognizer
-                .RecognizeAsync(roi, CancellationToken.None);
+                .RecognizeAsync(roi, CancellationToken.None, fixture.CursorInRoi);
 
             if (!outcome.Success || outcome.Coordinate is null)
             {
@@ -136,7 +144,7 @@ public class OcrPipelineTests
             using var roi = FixtureRepository.LoadRoi(fixture);
 
             var autoOutcome = await autoHarness.Recognizer
-                .RecognizeAsync(roi, CancellationToken.None);
+                .RecognizeAsync(roi, CancellationToken.None, fixture.CursorInRoi);
 
             if (IsHit(autoOutcome, fixture))
             {
@@ -149,7 +157,7 @@ public class OcrPipelineTests
             foreach (var single in singleHarnesses)
             {
                 var outcome = await single.Recognizer
-                    .RecognizeAsync(roi, CancellationToken.None);
+                    .RecognizeAsync(roi, CancellationToken.None, fixture.CursorInRoi);
 
                 best |= IsHit(outcome, fixture);
             }

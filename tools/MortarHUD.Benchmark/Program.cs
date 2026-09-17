@@ -207,7 +207,10 @@ static BenchmarkRow RunOne(
         var recognizer = new CoordinateRecognizer(
             configuration.Engines, configuration.Preprocessors, parser, validator);
 
-        var outcome = recognizer.RecognizeAsync(roi, CancellationToken.None).GetAwaiter().GetResult();
+        // 光标位置必须一起传：线上会先抹掉光标锚点，不传就量不到线上路径。
+        var outcome = recognizer
+            .RecognizeAsync(roi, CancellationToken.None, fixture.CursorInRoi)
+            .GetAwaiter().GetResult();
 
         row.AttemptSummary = string.Join(" ; ", outcome.Attempts.Select(DescribeAttempt));
         row.AttemptCount = outcome.Attempts.Count;
