@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# 同一分支上只保留最新一次，旧的自然作废。
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    # 必须 Windows：目标框架是 net10.0-windows，WPF 与 Win32 互操作都跑不了别的系统。
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          # 版本由仓库根的 global.json 钉住（10.0.401，rollForward latestFeature），
+          # 这里只声明大版本，避免和 global.json 各写一份、改一处忘一处。
+          dotnet-version: '10.0.x'
+          cache: true
+
+      - name: 构建
+        run: dotnet build MortarHUD.sln -c Release --nologo
+
+      - name: 测试
+        run: dotnet test MortarHUD.sln -c Release --no-build --nologo
+
+      # 自检走完整启动流程（构造全部窗口 + 跑一次真实识别），是发布产物的验收动作。
+      # 放进 CI 是因为它拦的是一类**静默**故障：Tesseract 原生库找不到时程序不报错，
+      # 只是悄悄退回模板引擎（缺数字 2、3），表现为「怎么点都识别不出来」。
+      - name: 启动自检
+        run: ./src/MortarHUD.App/bin/Release/net10.0-windows/MortarHUD.exe --selftest

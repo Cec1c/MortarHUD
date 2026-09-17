@@ -6,6 +6,7 @@
 
 **An external HUD that solves mortar coordinates for *Wardogs***
 
+[![CI](https://github.com/Cec1c/MortarHUD/actions/workflows/ci.yml/badge.svg)](https://github.com/Cec1c/MortarHUD/actions/workflows/ci.yml)
 [![Runtime: .NET 10](https://img.shields.io/static/v1?label=runtime&message=.NET%2010&color=512BD4&style=flat-square&logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
 [![UI: WPF](https://img.shields.io/static/v1?label=UI&message=WPF&color=512BD4&style=flat-square)](#project-layout)
 [![Imaging: OpenCvSharp4](https://img.shields.io/static/v1?label=imaging&message=OpenCvSharp4&color=5C3EE8&style=flat-square&logo=opencv&logoColor=white)](https://github.com/shimat/opencvsharp)

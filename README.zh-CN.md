@@ -6,6 +6,7 @@
 
 **《Wardogs》迫击炮坐标解算外置 HUD**
 
+[![CI](https://github.com/Cec1c/MortarHUD/actions/workflows/ci.yml/badge.svg)](https://github.com/Cec1c/MortarHUD/actions/workflows/ci.yml)
 [![运行时：.NET 10](https://img.shields.io/static/v1?label=%E8%BF%90%E8%A1%8C%E6%97%B6&message=.NET%2010&color=512BD4&style=flat-square&logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
 [![界面：WPF](https://img.shields.io/static/v1?label=%E7%95%8C%E9%9D%A2&message=WPF&color=512BD4&style=flat-square)](#项目结构)
 [![图像：OpenCvSharp4](https://img.shields.io/static/v1?label=%E5%9B%BE%E5%83%8F&message=OpenCvSharp4&color=5C3EE8&style=flat-square&logo=opencv&logoColor=white)](https://github.com/shimat/opencvsharp)
