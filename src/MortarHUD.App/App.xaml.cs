@@ -443,6 +443,7 @@ public partial class App : Application
     private void BuildShell()
     {
         _overlay = new OverlayWindow();
+        _overlay.Log = message => _logger?.LogInformation("{Message}", message);
         _overlay.PositionChangedByUser += (_, _) => PersistSettings();
 
         // TDD §34：Debug 面板是独立窗口，和主 HUD 分开。

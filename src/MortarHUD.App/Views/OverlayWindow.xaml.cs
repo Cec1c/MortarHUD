@@ -45,6 +45,13 @@ public partial class OverlayWindow : Window
     /// <summary>当前是否处于「可拖动」的编辑状态。</summary>
     public bool IsPositionUnlocked { get; private set; }
 
+    /// <summary>诊断日志出口，由 App 接到文件日志上。</summary>
+    /// <remarks>
+    /// 位置问题（HUD 跑到哪去了）只能靠记录落位前后的数字来查，
+    /// 界面截图看不出「它本该在哪」和「它实际在哪」的差别。
+    /// </remarks>
+    public Action<string>? Log { get; set; }
+
     /// <summary>状态提示的透明度，由 <see cref="Services.HudController"/> 驱动淡出。</summary>
     public double StatusOpacity
     {
@@ -71,6 +78,9 @@ public partial class OverlayWindow : Window
         _settings = settings;
         Renderer.Theme = settings.CurrentTheme;
         IsPositionUnlocked = settings.PositionUnlocked;
+
+        Log?.Invoke($"[HUD] 应用设置：visible={settings.Visible} unlocked={settings.PositionUnlocked} " +
+                    $"offset=({settings.OffsetX:0.#},{settings.OffsetY:0.#}) loaded={IsLoaded}");
 
         ApplyOverlayStyles();
         Reposition();
@@ -142,6 +152,10 @@ public partial class OverlayWindow : Window
     {
         if (_handle == IntPtr.Zero || !IsLoaded)
         {
+            // 这条以前是静默返回的。窗口尚未加载时跳过定位是对的（尺寸还没算出来），
+            // 但它会让「HUD 停在 WPF 默认位置」和「HUD 落位到设置位置」看起来一样，
+            // 排查位置问题时必须先知道到底走没走这一步。
+            Log?.Invoke($"[HUD] 落位跳过：handle={(IntPtr.Zero != _handle ? "有" : "无")} loaded={IsLoaded}");
             return;
         }
 
@@ -158,6 +172,11 @@ public partial class OverlayWindow : Window
         // 落位算法放在 Core，因为那里能写单元测试——「HUD 被推出屏幕后找不回来」
         // 就是漏了那里的边界钳制。见 HudPlacement。
         var (x, y) = HudPlacement.Resolve(workArea, width, height, _settings.Anchor, _settings.OffsetX, _settings.OffsetY, scale);
+
+        Log?.Invoke($"[HUD] 落位：anchor={_settings.Anchor} " +
+                    $"offset=({_settings.OffsetX:0.#},{_settings.OffsetY:0.#}) scale={scale:0.##} " +
+                    $"area=({workArea.X},{workArea.Y},{workArea.Width}x{workArea.Height}) " +
+                    $"size=({width:0.#}x{height:0.#}) -> ({x:0.#},{y:0.#})");
 
         OverlayWindowController.MoveToPhysical(_handle, (int)Math.Round(x), (int)Math.Round(y));
     }
@@ -177,6 +196,9 @@ public partial class OverlayWindow : Window
         _dragOriginScreen = GetCursorScreenPoint();
         _dragOriginOffsetX = _settings.OffsetX;
         _dragOriginOffsetY = _settings.OffsetY;
+
+        Log?.Invoke($"[HUD] 开始拖动：光标=({_dragOriginScreen.X},{_dragOriginScreen.Y}) " +
+                    $"起始偏移=({_dragOriginOffsetX:0.#},{_dragOriginOffsetY:0.#})");
 
         CaptureMouse();
         e.Handled = true;
@@ -213,6 +235,8 @@ public partial class OverlayWindow : Window
         _dragging = false;
         ReleaseMouseCapture();
         e.Handled = true;
+
+        Log?.Invoke($"[HUD] 拖动结束：偏移=({_settings.OffsetX:0.#},{_settings.OffsetY:0.#})");
 
         PositionChangedByUser?.Invoke(this, EventArgs.Empty);
     }
