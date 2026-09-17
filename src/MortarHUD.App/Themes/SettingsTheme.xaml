@@ -116,21 +116,26 @@
             <ToggleButton Focusable="False" ClickMode="Press" IsChecked="{Binding IsDropDownOpen, Mode=TwoWay,                                                           RelativeSource={RelativeSource TemplatedParent}}">
               <ToggleButton.Template>
                 <ControlTemplate TargetType="ToggleButton">
-                  <Border x:Name="Chrome" Background="{StaticResource SurfaceSunkenBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="3">
-                    <Path HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,8,0" Data="M 0,0 L 8,0 L 4,5 Z" Fill="{StaticResource MutedTextBrush}"/>
+                  <Border x:Name="Chrome" Background="{StaticResource SurfaceSunkenBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="8">
+                    <Path HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,12,0"
+                          Data="M 0,0 L 5,5 L 10,0" Stroke="{StaticResource MutedTextBrush}" StrokeThickness="1.6"
+                          StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
                   </Border>
                   <ControlTemplate.Triggers>
                     <Trigger Property="IsMouseOver" Value="True">
-                      <Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                      <Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource BorderStrongBrush}"/>
                     </Trigger>
                   </ControlTemplate.Triggers>
                 </ControlTemplate>
               </ToggleButton.Template>
             </ToggleButton>
-            <ContentPresenter IsHitTestVisible="False" Content="{TemplateBinding SelectionBoxItem}" ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" Margin="9,5,26,5" VerticalAlignment="Center" TextElement.Foreground="{StaticResource TextBrush}"/>
+            <ContentPresenter IsHitTestVisible="False" Content="{TemplateBinding SelectionBoxItem}" ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" Margin="12,9,32,9" VerticalAlignment="Center" TextElement.Foreground="{StaticResource TextBrush}"/>
             <!-- 名字必须是 PART_Popup：ComboBox 的代码里按这个名字找它。 -->
             <Popup x:Name="PART_Popup" AllowsTransparency="True" Placement="Bottom" Focusable="False" IsOpen="{TemplateBinding IsDropDownOpen}">
-              <Border MinWidth="{TemplateBinding ActualWidth}" MaxHeight="{TemplateBinding MaxDropDownHeight}" Background="{StaticResource SurfaceRaisedBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="3" Margin="0,2,0,0">
+              <Border MinWidth="{TemplateBinding ActualWidth}" MaxHeight="{TemplateBinding MaxDropDownHeight}" Background="{StaticResource SurfaceRaisedBrush}" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="8" Margin="0,4,0,0">
+                <Border.Effect>
+                  <DropShadowEffect BlurRadius="16" ShadowDepth="4" Direction="270" Opacity="0.5" Color="#000000"/>
+                </Border.Effect>
                 <ScrollViewer>
                   <ItemsPresenter/>
                 </ScrollViewer>
@@ -241,10 +246,15 @@
     <Setter Property="Template">
       <Setter.Value>
         <ControlTemplate TargetType="CheckBox">
-          <Border x:Name="Focus" BorderThickness="1" BorderBrush="Transparent" Padding="2">
+          <Border x:Name="Focus" BorderThickness="1" BorderBrush="Transparent" CornerRadius="6" Padding="2">
             <DockPanel Background="Transparent">
-              <Border x:Name="Box" Width="17" Height="17" CornerRadius="3" BorderThickness="1" BorderBrush="{StaticResource MutedTextBrush}" Margin="0,0,9,0" VerticalAlignment="Center">
-                <Path x:Name="Check" Visibility="Collapsed" Data="M 3,8 L 6,11 L 12,4" Stroke="{StaticResource AccentBrush}" StrokeThickness="2"/>
+              <Border x:Name="Box" Width="18" Height="18" CornerRadius="5"
+                      Background="{StaticResource SurfaceSunkenBrush}"
+                      BorderThickness="1" BorderBrush="{StaticResource BorderBrush}"
+                      Margin="0,0,10,0" VerticalAlignment="Center">
+                <Path x:Name="Check" Visibility="Collapsed" Data="M 4,9 L 7,12 L 13,5"
+                      Stroke="{StaticResource AccentBrush}" StrokeThickness="2"
+                      StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
               </Border>
               <ContentPresenter VerticalAlignment="Center" RecognizesAccessKey="True" TextElement.Foreground="{TemplateBinding Foreground}"/>
             </DockPanel>
@@ -252,13 +262,14 @@
           <ControlTemplate.Triggers>
             <Trigger Property="IsChecked" Value="True">
               <Setter TargetName="Check" Property="Visibility" Value="Visible"/>
+              <Setter TargetName="Box" Property="Background" Value="{StaticResource AccentSoftBrush}"/>
               <Setter TargetName="Box" Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+            </Trigger>
+            <Trigger Property="IsMouseOver" Value="True">
+              <Setter TargetName="Box" Property="BorderBrush" Value="{StaticResource BorderStrongBrush}"/>
             </Trigger>
             <Trigger Property="IsKeyboardFocused" Value="True">
               <Setter TargetName="Focus" Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
-            </Trigger>
-            <Trigger Property="IsMouseOver" Value="True">
-              <Setter TargetName="Box" Property="Background" Value="{StaticResource SurfaceRaisedBrush}"/>
             </Trigger>
             <Trigger Property="IsEnabled" Value="False">
               <Setter TargetName="Focus" Property="Opacity" Value="0.45"/>
@@ -275,11 +286,41 @@
     <Setter Property="Background" Value="{StaticResource SurfaceSunkenBrush}"/>
     <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
     <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
-    <Setter Property="Padding" Value="8,6"/>
-    <Setter Property="MinHeight" Value="32"/>
+    <Setter Property="Padding" Value="10,8"/>
+    <Setter Property="MinHeight" Value="34"/>
     <Setter Property="Margin" Value="0,3"/>
     <Setter Property="VerticalContentAlignment" Value="Center"/>
     <Setter Property="CaretBrush" Value="{StaticResource AccentBrush}"/>
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="TextBox">
+          <Border x:Name="Chrome"
+                  Background="{TemplateBinding Background}"
+                  BorderBrush="{TemplateBinding BorderBrush}"
+                  BorderThickness="1"
+                  CornerRadius="8">
+            <!-- PART_ContentHost 是 TextBox 按名字查找的宿主，不能改名也不能换类型。 -->
+            <ScrollViewer x:Name="PART_ContentHost"
+                          Margin="{TemplateBinding Padding}"
+                          VerticalAlignment="Center"
+                          Focusable="False"
+                          HorizontalScrollBarVisibility="Hidden"
+                          VerticalScrollBarVisibility="Hidden"/>
+          </Border>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+              <Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource BorderStrongBrush}"/>
+            </Trigger>
+            <Trigger Property="IsKeyboardFocusWithin" Value="True">
+              <Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+              <Setter TargetName="Chrome" Property="Opacity" Value="0.45"/>
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
   </Style>
   <Style TargetType="ListBox">
     <Setter Property="Background" Value="{StaticResource SurfaceSunkenBrush}"/>
