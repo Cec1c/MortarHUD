@@ -60,6 +60,30 @@
     "pipeline": "C"
   },
   {
+    "label": "2",
+    "pipeline": "A"
+  },
+  {
+    "label": "2",
+    "pipeline": "B"
+  },
+  {
+    "label": "2",
+    "pipeline": "C"
+  },
+  {
+    "label": "3",
+    "pipeline": "A"
+  },
+  {
+    "label": "3",
+    "pipeline": "B"
+  },
+  {
+    "label": "3",
+    "pipeline": "C"
+  },
+  {
     "label": "4",
     "pipeline": "A"
   },

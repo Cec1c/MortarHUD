@@ -27,6 +27,13 @@ if (!File.Exists(fixturesPath))
 
 var manifest = FixtureManifest.Load(fixturesPath);
 
+// 取 `--debug-dir` 指定的采集目录（不指定就用 %AppData% 下的默认位置）。
+string? DebugDirectory()
+{
+    var index = Array.IndexOf(args, "--debug-dir");
+    return index >= 0 && index + 1 < args.Length ? args[index + 1] : null;
+}
+
 // 可选：从 fixture 重新学习字形模板库。
 // 必须跑在创建任何引擎之前，否则 TemplateOcrEngine 会加载到旧的模板。
 var genIndex = Array.IndexOf(args, "--gen-templates");
@@ -39,6 +46,44 @@ if (genIndex >= 0)
     Console.WriteLine("正在从 fixture 生成字形模板库…");
     var generated = TemplateGenerator.Generate(
         manifest, screenshotDirectory, outputDirectory, PreprocessorFactory.All);
+
+    TemplateGenerator.WriteContactSheet(
+        generated, Path.Combine(outputDirectory, "contact-sheet.png"));
+
+    Console.WriteLine();
+}
+
+// 可选：用「运行期采集记录」补字形模板库。
+//
+// 采集记录自带标注（当时识别出的坐标），所以不用人工量包围盒——这是补全字形库的正路。
+// fixture 只有 3 张、坐标数字恰好缺 2 和 3；采集记录覆盖全部十位数字。
+var debugGenIndex = Array.IndexOf(args, "--gen-from-debug");
+if (debugGenIndex >= 0)
+{
+    var outputDirectory = debugGenIndex + 1 < args.Length
+        ? args[debugGenIndex + 1]
+        : Path.Combine(repoRoot, "src", "MortarHUD.App", "Models", "glyphs");
+
+    var debugDirectory = DebugDirectory() ?? DebugRecordHarvester.DefaultDirectory;
+    var harvested = DebugRecordHarvester.Harvest(debugDirectory);
+
+    var samples = TemplateGenerator.FromFixtures(manifest, screenshotDirectory)
+        .Concat(TemplateGenerator.FromHarvested(harvested))
+        .ToList();
+
+    Console.WriteLine($"生成字形模板库：fixture {manifest.Fixtures.Count} 张 "
+                      + $"+ 采集记录 {harvested.Count} 条（{debugDirectory}）");
+    Console.WriteLine();
+
+    if (harvested.Count == 0)
+    {
+        Console.Error.WriteLine(
+            "没有挖到任何采集记录。请先跑一次识别（设置里打开采集），"
+            + "或用 --debug-dir <目录> 指定采集目录。");
+        return 2;
+    }
+
+    var generated = TemplateGenerator.Generate(samples, outputDirectory, PreprocessorFactory.All);
 
     TemplateGenerator.WriteContactSheet(
         generated, Path.Combine(outputDirectory, "contact-sheet.png"));

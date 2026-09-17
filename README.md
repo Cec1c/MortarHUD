@@ -159,13 +159,21 @@ Turning "require a decimal point" off lets `98` count as a valid reading of `98.
 
 ### Template engine
 
-A fallback for when the language data is missing. Its glyph library is learned from real screenshots:
+A fallback for when the language data is missing. Its glyph library is learned from real screenshots and covers `x y . 0 1 2 3 4 5 6 7 8 9`. Unknown glyphs are reported as `?` rather than guessed, and the parser then fails the capture — never a silent wrong coordinate.
+
+Regenerate it from the built-in baseline screenshots:
 
 ```bash
 dotnet run --project tools/MortarHUD.Benchmark -- --gen-templates
 ```
 
-It currently covers `x y . 0 1 4 5 6 7 8 9` and is **missing 2 and 3** (the three baseline screenshots never happened to contain them). Unknown glyphs are reported as `?` rather than guessed, and the parser then fails the capture. Tesseract covers all ten digits, which is why it is the production default.
+The baseline set is only three screenshots, and its coordinates happen not to contain a `2` or a `3`. So the library is instead generated from the captures in `%AppData%\MortarHUD\Debug\` (Settings → enable capture), which carry their own labels: each record stores the coordinate that was read, so the text on screen is known and the glyphs can be labelled automatically — no manual bounding boxes.
+
+```bash
+dotnet run --project tools/MortarHUD.Benchmark -- --gen-from-debug
+```
+
+Add `--debug-dir <path>` to read captures from somewhere else. Only captures whose coordinate was read successfully are used. The captures themselves are not committed — regenerate the library from your own, and the coverage test below will tell you if anything is missing.
 
 ## Configuration
 

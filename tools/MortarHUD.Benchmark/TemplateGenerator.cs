@@ -37,9 +37,69 @@ public static class TemplateGenerator
         int LinesUsed,
         int LinesSkipped);
 
+    /// <summary>
+    /// 一份「带标注的文字块」：一张图 + 文字在其中的位置 + 文字内容。
+    /// </summary>
+    /// <remarks>
+    /// fixture 和运行期采集记录最终都归约成这个形状：
+    /// fixture 的标注是人工量的，采集记录的标注是当时识别出的坐标（等于自带答案）。
+    /// 生成器只认这个形状，于是两个来源可以混着用。
+    /// </remarks>
+    public sealed record TextSample(
+        string Id,
+        string ImagePath,
+        LabelBounds Bounds,
+        double ExpectedX,
+        double ExpectedY);
+
+    /// <summary>把 fixture 清单展开成文字块列表。</summary>
+    public static List<TextSample> FromFixtures(FixtureManifest manifest, string screenshotDirectory)
+    {
+        var samples = new List<TextSample>();
+
+        foreach (var fixture in manifest.Fixtures)
+        {
+            if (fixture.LabelBounds is not { } bounds)
+            {
+                continue;
+            }
+
+            samples.Add(new TextSample(
+                fixture.Id,
+                Path.Combine(screenshotDirectory, fixture.Screenshot),
+                bounds,
+                fixture.ExpectedX,
+                fixture.ExpectedY));
+        }
+
+        return samples;
+    }
+
+    /// <summary>把运行期采集记录展开成文字块列表。</summary>
+    /// <remarks>
+    /// 采集记录的 <c>_raw.png</c> 已经是裁好的 ROI，文字包围盒是相对 ROI 的，
+    /// 所以坐标点固定为 (0,0)。
+    /// </remarks>
+    public static List<TextSample> FromHarvested(IEnumerable<HarvestedRecord> records)
+        => records.Select(r => new TextSample(
+            r.Id,
+            r.RoiPath,
+            r.LabelBounds,
+            r.ExpectedX,
+            r.ExpectedY)).ToList();
+
     public static Result Generate(
         FixtureManifest manifest,
         string screenshotDirectory,
+        string outputDirectory,
+        IReadOnlyList<IImagePreprocessor> preprocessors)
+        => Generate(
+            FromFixtures(manifest, screenshotDirectory),
+            outputDirectory,
+            preprocessors);
+
+    public static Result Generate(
+        IReadOnlyList<TextSample> textSamples,
         string outputDirectory,
         IReadOnlyList<IImagePreprocessor> preprocessors)
     {
@@ -48,37 +108,31 @@ public static class TemplateGenerator
         var linesUsed = 0;
         var skipped = new List<string>();
 
-        foreach (var fixture in manifest.Fixtures)
+        foreach (var textSample in textSamples)
         {
-            var screenshotPath = Path.Combine(screenshotDirectory, fixture.Screenshot);
-            if (!File.Exists(screenshotPath))
+            if (!File.Exists(textSample.ImagePath))
             {
-                skipped.Add($"{fixture.Id}: 缺少截图");
+                skipped.Add($"{textSample.Id}: 缺少截图");
                 continue;
             }
 
-            if (fixture.LabelBounds is not { } labelBounds)
-            {
-                skipped.Add($"{fixture.Id}: manifest 里没有 labelBounds");
-                continue;
-            }
-
-            using var full = Cv2.ImRead(screenshotPath, ImreadModes.Color);
+            using var full = Cv2.ImRead(textSample.ImagePath, ImreadModes.Color);
             if (full.Empty())
             {
-                skipped.Add($"{fixture.Id}: 截图读取失败");
+                skipped.Add($"{textSample.Id}: 截图读取失败");
                 continue;
             }
 
             // 只在实测的文字区域内切字形。整块 ROI 上有大量地图纹理
             // （实测 46 个连通域里只有 13 个是字形），直接切会污染模板库。
+            var labelBounds = textSample.Bounds;
             var bounds = Rectangle.Intersect(
                 new Rectangle(labelBounds.X, labelBounds.Y, labelBounds.Width, labelBounds.Height),
                 new Rectangle(0, 0, full.Width, full.Height));
 
             if (bounds.Width <= 0 || bounds.Height <= 0)
             {
-                skipped.Add($"{fixture.Id}: labelBounds 落在截图之外");
+                skipped.Add($"{textSample.Id}: labelBounds 落在截图之外");
                 continue;
             }
 
@@ -87,13 +141,13 @@ public static class TemplateGenerator
             foreach (var preprocessor in preprocessors)
             {
                 using var processed = preprocessor.Process(roi);
-                var expectedLines = BuildExpectedLines(fixture);
+                var expectedLines = BuildExpectedLines(textSample);
                 var segments = FilterGlyphCandidates(GlyphSegmenter.Segment(processed));
 
                 var lines = SplitIntoTwoLines(segments);
                 if (lines is null)
                 {
-                    skipped.Add($"{fixture.Id}/{preprocessor.Name}: 无法切成两行（{segments.Count} 个连通域）");
+                    skipped.Add($"{textSample.Id}/{preprocessor.Name}: 无法切成两行（{segments.Count} 个连通域）");
                     continue;
                 }
 
@@ -105,7 +159,7 @@ public static class TemplateGenerator
                     if (glyphs.Count != expected.Length)
                     {
                         skipped.Add(
-                            $"{fixture.Id}/{preprocessor.Name} 第{lineIndex + 1}行: "
+                            $"{textSample.Id}/{preprocessor.Name} 第{lineIndex + 1}行: "
                             + $"字形数 {glyphs.Count} != 期望 {expected.Length}（期望 \"{expected}\"）");
                         continue;
                     }
@@ -321,11 +375,11 @@ public static class TemplateGenerator
         ];
     }
 
-    /// <summary>fixture 的期望文本按行拆开：第一行是 y，第二行是 x。</summary>
-    private static List<string> BuildExpectedLines(FixtureCase fixture)
+    /// <summary>期望文本按行拆开：第一行是 y，第二行是 x。</summary>
+    private static List<string> BuildExpectedLines(TextSample sample)
     {
-        var y = fixture.ExpectedY.ToString("0.00", CultureInfo.InvariantCulture);
-        var x = fixture.ExpectedX.ToString("0.00", CultureInfo.InvariantCulture);
+        var y = sample.ExpectedY.ToString("0.00", CultureInfo.InvariantCulture);
+        var x = sample.ExpectedX.ToString("0.00", CultureInfo.InvariantCulture);
 
         return [$"y{y}", $"x{x}"];
     }
