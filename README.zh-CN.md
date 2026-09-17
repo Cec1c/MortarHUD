@@ -10,14 +10,14 @@
 [![界面：WPF](https://img.shields.io/static/v1?label=%E7%95%8C%E9%9D%A2&message=WPF&color=512BD4&style=flat-square)](#项目结构)
 [![图像：OpenCvSharp4](https://img.shields.io/static/v1?label=%E5%9B%BE%E5%83%8F&message=OpenCvSharp4&color=5C3EE8&style=flat-square&logo=opencv&logoColor=white)](https://github.com/shimat/opencvsharp)
 [![OCR：Tesseract 5](https://img.shields.io/static/v1?label=OCR&message=Tesseract%205&color=2A6EBB&style=flat-square)](https://github.com/tesseract-ocr/tesseract)
-[![测试：214](https://img.shields.io/badge/%E6%B5%8B%E8%AF%95-214%20passed-25A162?style=flat-square)](#测试)
+[![测试：244](https://img.shields.io/badge/%E6%B5%8B%E8%AF%95-244%20passed-25A162?style=flat-square)](#测试)
 [![平台：Windows x64](https://img.shields.io/static/v1?label=%E5%B9%B3%E5%8F%B0&message=Windows%20x64&color=0078D6&style=flat-square&logo=windows&logoColor=white)](#环境要求)
 
 读屏识别游戏地图上的坐标读数，实时解算迫击炮的方位角与距离，透明置顶显示。
 
 **中文** ｜ [English](README.md)
 
-[快速开始](#快速开始) ｜ [界面](#界面) ｜ [OCR](#ocr) ｜ [项目结构](#项目结构) ｜ [已知边界](#已知边界)
+[快速开始](#快速开始) ｜ [实机效果](#实机效果) ｜ [界面](#界面) ｜ [OCR](#ocr) ｜ [项目结构](#项目结构) ｜ [已知边界](#已知边界)
 
 </div>
 
@@ -41,6 +41,17 @@ x98.09                 RNG 152m
 - 普通用户权限运行，不需要管理员
 
 只做两件事：注册全局热键，按键那一刻截取屏幕上一小块。不实现自动瞄准、弹道模拟、风偏修正、敌人识别——输出只有方位角和距离两个数。
+
+## 实机效果
+
+同一张地图上四次采集，每次光标落在不同位置：
+
+| | |
+| --- | --- |
+| ![](docs/images/ingame-1.jpg) | ![](docs/images/ingame-2.jpg) |
+| ![](docs/images/ingame-3.jpg) | ![](docs/images/ingame-4.jpg) |
+
+解算出的方位角与距离分别是 182.3° / 150 m、232.0° / 174 m、303.2° / 155 m、009.8° / 146 m。地图光标旁那两行 `y` / `x` 就是 OCR 读的内容；左侧绿色那块是 HUD，右下角面板是可选的诊断读数。
 
 ## 界面
 
@@ -173,6 +184,8 @@ HUD 可改布局（Minimal / Compact / Detailed / Horizontal）、字体字号�
 
 ```text
 src/
+├─ MortarHUD.Localization/       # 界面文案表（中 / 英），无任何依赖
+│
 ├─ MortarHUD.Core/               # 纯计算，无 Windows / UI 依赖
 │  ├─ Models/ Ballistics/ Parsing/ Validation/
 │  ├─ Session/                   # 状态机、HUD 排版、操作调度
@@ -190,6 +203,7 @@ src/
 │
 └─ MortarHUD.App/                # WPF
    ├─ Views/ ViewModels/ Services/ Tray/
+   ├─ Localization/              # XAML 取文案用的标记扩展
    ├─ Assets/                    # 应用图标
    └─ Models/                    # 随程序发布的 OCR 资源
 

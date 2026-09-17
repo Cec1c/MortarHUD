@@ -17,7 +17,7 @@ Reads the coordinate readout off the in-game map, solves the bearing and range t
 
 **English** ｜ [中文](README.zh-CN.md)
 
-[Quick start](#quick-start) ｜ [UI](#ui) ｜ [OCR](#ocr) ｜ [Project layout](#project-layout) ｜ [Known limits](#known-limits)
+[Quick start](#quick-start) ｜ [In game](#in-game) ｜ [UI](#ui) ｜ [OCR](#ocr) ｜ [Project layout](#project-layout) ｜ [Known limits](#known-limits)
 
 </div>
 
@@ -41,6 +41,17 @@ Because it reads *absolute* coordinates, zooming, panning and re-centering the m
 - Runs as a normal user, no administrator rights
 
 It does exactly two things: register global hotkeys, and grab a small region of the screen at the moment you press one. No auto-aim, no ballistics simulation, no wind correction, no enemy detection — the output is two numbers, bearing and range.
+
+## In game
+
+Four captures on the same map, the cursor moved to a different spot each time:
+
+| | |
+| --- | --- |
+| ![](docs/images/ingame-1.jpg) | ![](docs/images/ingame-2.jpg) |
+| ![](docs/images/ingame-3.jpg) | ![](docs/images/ingame-4.jpg) |
+
+Bearing and range come out as 182.3° / 150 m, 232.0° / 174 m, 303.2° / 155 m and 009.8° / 146 m. The `y` / `x` lines beside the map cursor are what the OCR reads; the green block on the left is the HUD, and the panel in the bottom-right corner is the optional diagnostics readout.
 
 ## UI
 
