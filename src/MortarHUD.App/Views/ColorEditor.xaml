@@ -1,6 +1,6 @@
 <UserControl x:Class="MortarHUD.App.Views.ColorEditor"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:loc="clr-namespace:MortarHUD.App.Localization"
              MinWidth="180">
     <Grid>
         <Grid.ColumnDefinitions>
@@ -43,7 +43,7 @@
         <TextBox Grid.Column="1"
                  x:Name="HexBox"
                  VerticalContentAlignment="Center"
-                 ToolTip="支持 #RRGGBB、#AARRGGBB，也支持 RRGGBB / AARRGGBB"
+                 ToolTip="{loc:T AcceptsRRGGBBAARRGGBBAndRRGGBBAARRGGBB}"
                  Text="{Binding ColorHex, RelativeSource={RelativeSource AncestorType=UserControl}, UpdateSourceTrigger=LostFocus}" />
 
         <ToggleButton Grid.Column="2"
@@ -51,7 +51,7 @@
                       Margin="4,0,0,0"
                       Padding="6,2,6,2"
                       Content="▾"
-                      ToolTip="从调色板选一个颜色" />
+                      ToolTip="{loc:T PickAColorFromThePalette}" />
 
         <Popup Grid.Column="0" Grid.ColumnSpan="3"
                IsOpen="{Binding IsChecked, ElementName=PaletteToggle, Mode=TwoWay}"
@@ -61,7 +61,7 @@
                AllowsTransparency="True">
             <Border Background="#26282C" BorderBrush="#3A3D42" BorderThickness="1" CornerRadius="4" Padding="8">
                 <StackPanel>
-                    <TextBlock Text="常用色" FontSize="11" Foreground="#9AA0A6" Margin="0,0,0,6" />
+                    <TextBlock Text="{loc:T CommonColors}" FontSize="11" Foreground="#9AA0A6" Margin="0,0,0,6" />
                     <ItemsControl x:Name="SwatchList" Width="240">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
@@ -70,7 +70,7 @@
                         </ItemsControl.ItemsPanel>
                     </ItemsControl>
 
-                    <TextBlock Text="不透明度" FontSize="11" Foreground="#9AA0A6" Margin="0,10,0,4" />
+                    <TextBlock Text="{loc:T Opacity}" FontSize="11" Foreground="#9AA0A6" Margin="0,10,0,4" />
                     <!--
                         事件在构造函数里挂，不写在 XAML 上：
                         带 Value 默认值的元素在 InitializeComponent() 期间就会引发一次事件，

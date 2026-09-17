@@ -13,6 +13,7 @@ using MortarHUD.Core.Ballistics;
 using MortarHUD.Core.Configuration;
 using MortarHUD.Core.Diagnostics;
 using MortarHUD.Core.Models;
+using MortarHUD.Core.Localization;
 using MortarHUD.Core.Parsing;
 using MortarHUD.Core.Session;
 using MortarHUD.Core.Validation;
@@ -105,11 +106,18 @@ public partial class App : Application
         // ---- 正常运行 ----
 
         // 单实例：跑两份会出现两个 Overlay 抢置顶，热键第二次注册也必然失败。
+        // 设置要在单实例检查之前读：那条「已经在运行了」的提示也得按用户的语言显示。
+        _settingsStore = new SettingsStore();
+        _settings = _settingsStore.Load();
+
+        // 界面文案是构造时求值的（见 TExtension），所以语言必须在任何窗口或对话框出现之前定好。
+        Loc.Language = _settings.General.Language;
+
         _singleInstanceMutex = new Mutex(initiallyOwned: true, SingleInstanceMutexName, out var isFirstInstance);
         if (!isFirstInstance)
         {
             MessageBox.Show(
-                "MortarHUD 已经在运行了，请从系统托盘打开设置。",
+                Loc.T("MortarHUDIsAlreadyRunningOpenSettingsFromTheSystemTray"),
                 "MortarHUD",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
@@ -117,9 +125,6 @@ public partial class App : Application
             Shutdown();
             return;
         }
-
-        _settingsStore = new SettingsStore();
-        _settings = _settingsStore.Load();
 
         SetupLogging();
         _logger?.LogInformation("MortarHUD 启动（schema v{Version}）", _settings.SchemaVersion);

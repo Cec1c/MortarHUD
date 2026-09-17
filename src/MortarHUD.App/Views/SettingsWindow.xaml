@@ -1,4 +1,4 @@
-<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:views="clr-namespace:MortarHUD.App.Views" xmlns:vm="clr-namespace:MortarHUD.App.ViewModels" x:Class="MortarHUD.App.Views.SettingsWindow" Title="MortarHUD 设置" Width="1040" Height="800" MinWidth="920" MinHeight="680" WindowStartupLocation="CenterScreen" Background="{StaticResource SurfaceBrush}" Foreground="{StaticResource TextBrush}" FontFamily="Microsoft YaHei UI" FontSize="13" Icon="/Assets/MortarHUD.ico">
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:loc="clr-namespace:MortarHUD.App.Localization" xmlns:views="clr-namespace:MortarHUD.App.Views" xmlns:vm="clr-namespace:MortarHUD.App.ViewModels" x:Class="MortarHUD.App.Views.SettingsWindow" Title="{loc:T MortarHUDSettings}" Width="1040" Height="800" MinWidth="920" MinHeight="680" WindowStartupLocation="CenterScreen" Background="{StaticResource SurfaceBrush}" Foreground="{StaticResource TextBrush}" FontFamily="Microsoft YaHei UI" FontSize="13" Icon="/Assets/MortarHUD.ico">
   <Window.Resources>
     <views:BoolToVisibilityConverter x:Key="BoolToVisibility"/>
     <views:InverseBoolConverter x:Key="InverseBool"/>
@@ -11,7 +11,7 @@
         <Image Source="/Assets/MortarHUD.png" Width="22" Height="22" Margin="0,0,10,0"/>
         <StackPanel VerticalAlignment="Center">
           <TextBlock Text="MortarHUD" FontSize="12" FontWeight="SemiBold"/>
-          <TextBlock Text="WARDOGS · 迫击炮坐标解算" Foreground="{StaticResource SubtleTextBrush}" FontSize="11"/>
+          <TextBlock Text="{loc:T WARDOGSMortarCoordinateSolver}" Foreground="{StaticResource SubtleTextBrush}" FontSize="11"/>
         </StackPanel>
       </StackPanel>
     </Border>
@@ -22,21 +22,21 @@
           <ColumnDefinition Width="*"/>
           <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
-        <TextBlock x:Name="StatusText" VerticalAlignment="Center" Foreground="{StaticResource MutedTextBrush}" Text="设置在点击应用后生效。" Margin="0,0,18,0" TextWrapping="Wrap"/>
+        <TextBlock x:Name="StatusText" VerticalAlignment="Center" Foreground="{StaticResource MutedTextBrush}" Text="{loc:T SettingsTakeEffectAfterYouClickApply}" Margin="0,0,18,0" TextWrapping="Wrap"/>
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Grid.Column="1">
-          <CheckBox x:Name="LivePreviewCheck" Content="实时预览" IsChecked="True" VerticalAlignment="Center" Margin="0,0,14,0"/>
-          <Button Content="应用" Click="OnApplyClicked"/>
-          <Button Content="保存并收起" Click="OnOkClicked" Style="{StaticResource PrimaryButton}"/>
-          <Button Content="收起" Click="OnCancelClicked" Margin="0"/>
+          <CheckBox x:Name="LivePreviewCheck" Content="{loc:T LivePreview}" IsChecked="True" VerticalAlignment="Center" Margin="0,0,14,0"/>
+          <Button Content="{loc:T Apply}" Click="OnApplyClicked"/>
+          <Button Content="{loc:T SaveClose}" Click="OnOkClicked" Style="{StaticResource PrimaryButton}"/>
+          <Button Content="{loc:T Collapse}" Click="OnCancelClicked" Margin="0"/>
         </StackPanel>
       </Grid>
     </Border>
     <TabControl x:Name="Tabs" Background="{StaticResource SurfaceBrush}" BorderThickness="0" Padding="26,22,26,26" TabStripPlacement="Left">
-      <TabItem Header="日常使用">
+      <TabItem Header="{loc:T DailyUse}">
         <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
           <StackPanel>
-            <TextBlock Text="锁定炮位，记录目标。" Style="{StaticResource PageTitle}"/>
-            <TextBlock Text="打开游戏地图后操作。识别失败时，已保存的炮位与目标保持不变。" Style="{StaticResource Hint}"/>
+            <TextBlock Text="{loc:T LockTheGunRecordTheTarget}" Style="{StaticResource PageTitle}"/>
+            <TextBlock Text="{loc:T UseItWithTheInGameMapOpenAFailedReadLeavesTheSav}" Style="{StaticResource Hint}"/>
             <Grid Margin="0,22,0,0">
               <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="1.4*"/>
@@ -45,7 +45,7 @@
               </Grid.ColumnDefinitions>
               <Border Style="{StaticResource Card}">
                 <StackPanel>
-                  <TextBlock Text="操作按键" Style="{StaticResource SectionHeader}"/>
+                  <TextBlock Text="{loc:T Hotkeys}" Style="{StaticResource SectionHeader}"/>
                   <Grid Margin="0,8,0,0" MaxWidth="10000" HorizontalAlignment="Stretch">
                     <Grid.ColumnDefinitions>
                       <ColumnDefinition Width="130"/>
@@ -64,60 +64,60 @@
                       <RowDefinition Height="Auto"/>
                       <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
-                    <Label Grid.Row="0" Grid.Column="0" Content="记录炮位"/>
-                    <TextBox Grid.Row="0" Grid.Column="1" x:Name="GunHotkeyBox" IsReadOnly="True" Cursor="Hand" PreviewKeyDown="OnHotkeyBoxKeyDown" PreviewMouseDown="OnHotkeyBoxMouseDown" GotFocus="OnHotkeyBoxGotFocus" Text="{Binding CaptureGun, Mode=OneWay, Converter={StaticResource HotkeyDisplay}}" AutomationProperties.Name="记录炮位"/>
-                    <Label Grid.Row="1" Grid.Column="0" Content="记录目标"/>
-                    <TextBox Grid.Row="1" Grid.Column="1" x:Name="TargetHotkeyBox" IsReadOnly="True" Cursor="Hand" PreviewKeyDown="OnHotkeyBoxKeyDown" PreviewMouseDown="OnHotkeyBoxMouseDown" GotFocus="OnHotkeyBoxGotFocus" Text="{Binding CaptureTarget, Mode=OneWay, Converter={StaticResource HotkeyDisplay}}" AutomationProperties.Name="记录目标"/>
-                    <Label Grid.Row="2" Grid.Column="0" Content="显示 / 隐藏 HUD"/>
-                    <TextBox Grid.Row="2" Grid.Column="1" x:Name="ToggleHotkeyBox" IsReadOnly="True" Cursor="Hand" PreviewKeyDown="OnHotkeyBoxKeyDown" PreviewMouseDown="OnHotkeyBoxMouseDown" GotFocus="OnHotkeyBoxGotFocus" Text="{Binding ToggleHudHotkey, Mode=OneWay, Converter={StaticResource HotkeyDisplay}}" AutomationProperties.Name="显示 / 隐藏 HUD"/>
-                    <Label Grid.Row="3" Grid.Column="0" Content="打开设置"/>
-                    <TextBox Grid.Row="3" Grid.Column="1" x:Name="SettingsHotkeyBox" IsReadOnly="True" Cursor="Hand" PreviewKeyDown="OnHotkeyBoxKeyDown" PreviewMouseDown="OnHotkeyBoxMouseDown" GotFocus="OnHotkeyBoxGotFocus" Text="{Binding OpenSettingsHotkey, Mode=OneWay, Converter={StaticResource HotkeyDisplay}}" AutomationProperties.Name="打开设置"/>
-                    <Button Grid.Row="4" Grid.Column="1" Content="恢复默认" Click="OnRestoreHotkeysClicked" HorizontalAlignment="Left" Margin="0,8,0,16"/>
+                    <Label Grid.Row="0" Grid.Column="0" Content="{loc:T RecordGun}"/>
+                    <TextBox Grid.Row="0" Grid.Column="1" x:Name="GunHotkeyBox" IsReadOnly="True" Cursor="Hand" PreviewKeyDown="OnHotkeyBoxKeyDown" PreviewMouseDown="OnHotkeyBoxMouseDown" GotFocus="OnHotkeyBoxGotFocus" Text="{Binding CaptureGun, Mode=OneWay, Converter={StaticResource HotkeyDisplay}}" AutomationProperties.Name="{loc:T RecordGun}"/>
+                    <Label Grid.Row="1" Grid.Column="0" Content="{loc:T RecordTarget}"/>
+                    <TextBox Grid.Row="1" Grid.Column="1" x:Name="TargetHotkeyBox" IsReadOnly="True" Cursor="Hand" PreviewKeyDown="OnHotkeyBoxKeyDown" PreviewMouseDown="OnHotkeyBoxMouseDown" GotFocus="OnHotkeyBoxGotFocus" Text="{Binding CaptureTarget, Mode=OneWay, Converter={StaticResource HotkeyDisplay}}" AutomationProperties.Name="{loc:T RecordTarget}"/>
+                    <Label Grid.Row="2" Grid.Column="0" Content="{loc:T ShowHideHUD}"/>
+                    <TextBox Grid.Row="2" Grid.Column="1" x:Name="ToggleHotkeyBox" IsReadOnly="True" Cursor="Hand" PreviewKeyDown="OnHotkeyBoxKeyDown" PreviewMouseDown="OnHotkeyBoxMouseDown" GotFocus="OnHotkeyBoxGotFocus" Text="{Binding ToggleHudHotkey, Mode=OneWay, Converter={StaticResource HotkeyDisplay}}" AutomationProperties.Name="{loc:T ShowHideHUD}"/>
+                    <Label Grid.Row="3" Grid.Column="0" Content="{loc:T OpenSettings}"/>
+                    <TextBox Grid.Row="3" Grid.Column="1" x:Name="SettingsHotkeyBox" IsReadOnly="True" Cursor="Hand" PreviewKeyDown="OnHotkeyBoxKeyDown" PreviewMouseDown="OnHotkeyBoxMouseDown" GotFocus="OnHotkeyBoxGotFocus" Text="{Binding OpenSettingsHotkey, Mode=OneWay, Converter={StaticResource HotkeyDisplay}}" AutomationProperties.Name="{loc:T OpenSettings}"/>
+                    <Button Grid.Row="4" Grid.Column="1" Content="{loc:T RestoreDefaults}" Click="OnRestoreHotkeysClicked" HorizontalAlignment="Left" Margin="0,8,0,16"/>
                     <StackPanel Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="3" Margin="0,0,0,8">
-                      <CheckBox Content="按地图键自动校准炮位" IsChecked="{Binding AutoCalibrateEnabled}"/>
+                      <CheckBox Content="{loc:T AutoCalibrateTheGunWhenTheMapKeyIsPressed}" IsChecked="{Binding AutoCalibrateEnabled}"/>
                     </StackPanel>
-                    <TextBlock Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="3" Text="地图键自动校准" Style="{StaticResource SectionHeader}"/>
-                    <Label Grid.Row="7" Grid.Column="0" Content="地图键"/>
-                    <TextBox Grid.Row="7" Grid.Column="1" x:Name="MapKeyBox" IsReadOnly="True" Cursor="Hand" PreviewKeyDown="OnHotkeyBoxKeyDown" GotFocus="OnHotkeyBoxGotFocus" IsEnabled="{Binding AutoCalibrateEnabled}" Text="{Binding AutoCalibrateKey, Mode=OneWay, Converter={StaticResource HotkeyDisplay}}" AutomationProperties.Name="地图键"/>
-                    <Label Grid.Row="8" Grid.Column="0" Content="打开地图后等待"/>
-                    <TextBox Grid.Row="8" Grid.Column="1" IsEnabled="{Binding AutoCalibrateEnabled}" Text="{Binding AutoCalibrateDelayMs}" AutomationProperties.Name="打开地图后等待"/>
-                    <TextBlock Grid.Row="8" Grid.Column="2" Text="毫秒" VerticalAlignment="Center" Margin="6,0,0,0"/>
+                    <TextBlock Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="3" Text="{loc:T MapKeyAutoCalibration}" Style="{StaticResource SectionHeader}"/>
+                    <Label Grid.Row="7" Grid.Column="0" Content="{loc:T MapKey}"/>
+                    <TextBox Grid.Row="7" Grid.Column="1" x:Name="MapKeyBox" IsReadOnly="True" Cursor="Hand" PreviewKeyDown="OnHotkeyBoxKeyDown" GotFocus="OnHotkeyBoxGotFocus" IsEnabled="{Binding AutoCalibrateEnabled}" Text="{Binding AutoCalibrateKey, Mode=OneWay, Converter={StaticResource HotkeyDisplay}}" AutomationProperties.Name="{loc:T MapKey}"/>
+                    <Label Grid.Row="8" Grid.Column="0" Content="{loc:T WaitAfterOpeningTheMap}"/>
+                    <TextBox Grid.Row="8" Grid.Column="1" IsEnabled="{Binding AutoCalibrateEnabled}" Text="{Binding AutoCalibrateDelayMs}" AutomationProperties.Name="{loc:T WaitAfterOpeningTheMap}"/>
+                    <TextBlock Grid.Row="8" Grid.Column="2" Text="{loc:T TextMs}" VerticalAlignment="Center" Margin="6,0,0,0"/>
                     <!-- 这一行是给布局留位置的，内容由上面的 StackPanel 提供 -->
                     <TextBlock Grid.Row="6" Grid.Column="1" Visibility="Collapsed"/>
                   </Grid>
-                  <TextBlock Text="点击键位框后按新键。按 M 后保持光标不动；未归位时可用手动炮位键。" Style="{StaticResource Hint}"/>
+                  <TextBlock Text="{loc:T ClickAHotkeyBoxThenPressTheNewKeyAfterPressingMK}" Style="{StaticResource Hint}"/>
                 </StackPanel>
               </Border>
               <StackPanel Grid.Column="2">
                 <Border Style="{StaticResource Card}">
                   <StackPanel>
-                    <TextBlock Text="使用顺序" Style="{StaticResource SectionHeader}"/>
-                    <TextBlock Text="01   开图并锁定炮位" Margin="0,12,0,8"/>
-                    <TextBlock Text="02   指向目标，按记录目标键" Margin="0,0,0,8" TextWrapping="Wrap"/>
-                    <TextBlock Text="03   查看 HUD 方位与距离" Margin="0,0,0,12"/>
-                    <TextBlock Text="M 自动校准只在光标回到游戏窗口中心时尝试，移动或切窗会取消。" Style="{StaticResource Hint}"/>
+                    <TextBlock Text="{loc:T HowToUse}" Style="{StaticResource SectionHeader}"/>
+                    <TextBlock Text="{loc:T OpenTheMapAndLockTheGun}" Margin="0,12,0,8"/>
+                    <TextBlock Text="{loc:T PointAtTheTargetAndPressTheTargetKey}" Margin="0,0,0,8" TextWrapping="Wrap"/>
+                    <TextBlock Text="{loc:T ReadAZAndRNGFromTheHUD}" Margin="0,0,0,12"/>
+                    <TextBlock Text="{loc:T MAutoCalibrationOnlyFiresWhileTheCursorIsBackAtT}" Style="{StaticResource Hint}"/>
                   </StackPanel>
                 </Border>
                 <StackPanel>
-                  <TextBlock Text="启动行为" Style="{StaticResource SectionHeader}"/>
-                  <CheckBox Content="启动时最小化到托盘" IsChecked="{Binding StartMinimized}"/>
-                  <CheckBox Content="开机自动启动" IsChecked="{Binding StartWithWindows}"/>
-                  <TextBlock Text="关闭窗口后，程序继续在系统托盘运行。" Style="{StaticResource Hint}" Margin="0,8,0,0"/><Expander Header="坐标换算与轴向">
+                  <TextBlock Text="{loc:T Startup}" Style="{StaticResource SectionHeader}"/>
+                  <CheckBox Content="{loc:T StartMinimizedToTray}" IsChecked="{Binding StartMinimized}"/>
+                  <CheckBox Content="{loc:T StartWithWindows}" IsChecked="{Binding StartWithWindows}"/>
+                  <TextBlock Text="{loc:T ClosingTheWindowKeepsMortarHUDRunningInTheSystem}" Style="{StaticResource Hint}" Margin="0,8,0,0"/><Expander Header="{loc:T CoordinateConversionAndAxes}">
                     <StackPanel>
-                      <TextBlock Text="坐标换算" Style="{StaticResource SectionHeader}"/>
+                      <TextBlock Text="{loc:T CoordinateConversion}" Style="{StaticResource SectionHeader}"/>
                       <Grid>
                         <Grid.ColumnDefinitions>
                           <ColumnDefinition Width="Auto"/>
                           <ColumnDefinition Width="120"/>
                           <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <Label Grid.Column="0" Content="每个坐标单位 ="/>
-                        <TextBox Grid.Column="1" Text="{Binding MetersPerCoordinateUnit, StringFormat={}{0:0.###}}" AutomationProperties.Name="每个坐标单位 ="/>
-                        <Label Grid.Column="2" Content="米"/>
+                        <Label Grid.Column="0" Content="{loc:T MetersPerCoordinateUnit}"/>
+                        <TextBox Grid.Column="1" Text="{Binding MetersPerCoordinateUnit, StringFormat={}{0:0.###}}" AutomationProperties.Name="{loc:T MetersPerCoordinateUnit}"/>
+                        <Label Grid.Column="2" Content="{loc:T TextM}"/>
                       </Grid>
-                      <TextBlock Text="坐标轴方向" Style="{StaticResource SectionHeader}"/>
-                      <CheckBox Content="+X 指向东（East）" IsChecked="{Binding XPositiveIsEast}"/>
-                      <CheckBox Content="+Y 指向北（North）" IsChecked="{Binding YPositiveIsNorth}"/>
+                      <TextBlock Text="{loc:T AxisDirections}" Style="{StaticResource SectionHeader}"/>
+                      <CheckBox Content="{loc:T XPointsEast}" IsChecked="{Binding XPositiveIsEast}"/>
+                      <CheckBox Content="{loc:T YPointsNorth}" IsChecked="{Binding YPositiveIsNorth}"/>
                     </StackPanel>
                   </Expander>
                 </StackPanel>
@@ -126,7 +126,7 @@
           </StackPanel>
         </ScrollViewer>
       </TabItem>
-      <TabItem Header="外观">
+      <TabItem Header="{loc:T Appearance}">
         <Grid>
           <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
@@ -135,14 +135,14 @@
           </Grid.ColumnDefinitions>
           <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
             <StackPanel>
-              <TextBlock Text="清楚，不抢眼。" Style="{StaticResource PageTitle}"/>
-              <TextBlock Text="从预设开始，右侧实时预览显示效果。" Style="{StaticResource Hint}"/>
-              <TextBlock Text="主题预设" Style="{StaticResource SectionHeader}"/>
+              <TextBlock Text="{loc:T CrispWithoutBeingLoud}" Style="{StaticResource PageTitle}"/>
+              <TextBlock Text="{loc:T StartFromAPresetThePreviewOnTheRightUpdatesLive}" Style="{StaticResource Hint}"/>
+              <TextBlock Text="{loc:T ThemePresets}" Style="{StaticResource SectionHeader}"/>
               <DockPanel Margin="0,6,0,12">
-                <Button DockPanel.Dock="Right" Content="使用预设" Click="OnApplyThemeClicked" Margin="10,0,0,0"/>
+                <Button DockPanel.Dock="Right" Content="{loc:T UsePreset}" Click="OnApplyThemeClicked" Margin="10,0,0,0"/>
                 <ComboBox ItemsSource="{Binding Themes}" SelectedItem="{Binding SelectedTheme}"><ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Name, Converter={StaticResource SettingLabel}}"/></DataTemplate></ComboBox.ItemTemplate></ComboBox>
               </DockPanel>
-              <TextBlock Text="大小与布局" Style="{StaticResource SectionHeader}"/>
+              <TextBlock Text="{loc:T SizeAndLayout}" Style="{StaticResource SectionHeader}"/>
               <Grid>
                 <Grid.ColumnDefinitions>
                   <ColumnDefinition Width="80"/>
@@ -152,14 +152,14 @@
                   <RowDefinition Height="Auto"/>
                   <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
-                <Label Grid.Row="0" Grid.Column="0" Content="布局"/>
-                <ComboBox Grid.Row="0" Grid.Column="1" Margin="0,2,0,2" ItemsSource="{x:Static vm:SettingsViewModel.AvailableLayouts}" SelectedItem="{Binding Layout}" AutomationProperties.Name="布局"><ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Converter={StaticResource SettingLabel}}"/></DataTemplate></ComboBox.ItemTemplate></ComboBox>
-                <Label Grid.Row="1" Grid.Column="0" Content="字号"/>
-                <Slider Grid.Row="1" Grid.Column="1" Minimum="8" Maximum="72" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding FontSize}" ToolTip="{Binding Value, RelativeSource={RelativeSource Self}, StringFormat={}{0:0.##}}" AutomationProperties.Name="字号"/>
+                <Label Grid.Row="0" Grid.Column="0" Content="{loc:T Layout}"/>
+                <ComboBox Grid.Row="0" Grid.Column="1" Margin="0,2,0,2" ItemsSource="{x:Static vm:SettingsViewModel.AvailableLayouts}" SelectedItem="{Binding Layout}" AutomationProperties.Name="{loc:T Layout}"><ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Converter={StaticResource SettingLabel}}"/></DataTemplate></ComboBox.ItemTemplate></ComboBox>
+                <Label Grid.Row="1" Grid.Column="0" Content="{loc:T FontSize}"/>
+                <Slider Grid.Row="1" Grid.Column="1" Minimum="8" Maximum="72" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding FontSize}" ToolTip="{Binding Value, RelativeSource={RelativeSource Self}, StringFormat={}{0:0.##}}" AutomationProperties.Name="{loc:T FontSize}"/>
               </Grid>
-              <TextBlock Text="位置" Style="{StaticResource SectionHeader}"/>
-              <CheckBox x:Name="UnlockPositionCheck" Content="解锁位置，拖动 HUD" IsChecked="{Binding PositionUnlocked}" Checked="OnUnlockPositionToggled" Unchecked="OnUnlockPositionToggled" Margin="0,8,0,8"/>
-              <Expander Header="精确位置">
+              <TextBlock Text="{loc:T Position}" Style="{StaticResource SectionHeader}"/>
+              <CheckBox x:Name="UnlockPositionCheck" Content="{loc:T UnlockThePositionAndDragTheHUD}" IsChecked="{Binding PositionUnlocked}" Checked="OnUnlockPositionToggled" Unchecked="OnUnlockPositionToggled" Margin="0,8,0,8"/>
+              <Expander Header="{loc:T ExactPosition}">
                 <StackPanel>
                   <Grid>
                     <Grid.ColumnDefinitions>
@@ -172,19 +172,19 @@
                       <RowDefinition Height="Auto"/>
                       <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
-                    <Label Grid.Row="0" Grid.Column="0" Content="锚点"/>
-                    <ComboBox Grid.Row="0" Grid.Column="1" Margin="0,2,0,2" ItemsSource="{x:Static vm:SettingsViewModel.AvailableAnchors}" SelectedItem="{Binding Anchor}" AutomationProperties.Name="锚点"><ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Converter={StaticResource SettingLabel}}"/></DataTemplate></ComboBox.ItemTemplate></ComboBox>
-                    <Label Grid.Row="1" Grid.Column="0" Content="偏移 X"/>
-                    <Slider Grid.Row="1" Grid.Column="1" Minimum="-400" Maximum="400" Value="{Binding OffsetX}" ToolTip="{Binding Value, RelativeSource={RelativeSource Self}, StringFormat={}{0:0.##}}" AutomationProperties.Name="偏移 X"/>
-                    <Label Grid.Row="2" Grid.Column="0" Content="偏移 Y"/>
-                    <Slider Grid.Row="2" Grid.Column="1" Minimum="-400" Maximum="400" Value="{Binding OffsetY}" ToolTip="{Binding Value, RelativeSource={RelativeSource Self}, StringFormat={}{0:0.##}}" AutomationProperties.Name="偏移 Y"/>
+                    <Label Grid.Row="0" Grid.Column="0" Content="{loc:T Anchor}"/>
+                    <ComboBox Grid.Row="0" Grid.Column="1" Margin="0,2,0,2" ItemsSource="{x:Static vm:SettingsViewModel.AvailableAnchors}" SelectedItem="{Binding Anchor}" AutomationProperties.Name="{loc:T Anchor}"><ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Converter={StaticResource SettingLabel}}"/></DataTemplate></ComboBox.ItemTemplate></ComboBox>
+                    <Label Grid.Row="1" Grid.Column="0" Content="{loc:T OffsetX}"/>
+                    <Slider Grid.Row="1" Grid.Column="1" Minimum="-400" Maximum="400" Value="{Binding OffsetX}" ToolTip="{Binding Value, RelativeSource={RelativeSource Self}, StringFormat={}{0:0.##}}" AutomationProperties.Name="{loc:T OffsetX}"/>
+                    <Label Grid.Row="2" Grid.Column="0" Content="{loc:T OffsetY}"/>
+                    <Slider Grid.Row="2" Grid.Column="1" Minimum="-400" Maximum="400" Value="{Binding OffsetY}" ToolTip="{Binding Value, RelativeSource={RelativeSource Self}, StringFormat={}{0:0.##}}" AutomationProperties.Name="{loc:T OffsetY}"/>
                     <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" Margin="0,8,0,0">
-                      <Button Content="重置位置" Click="OnResetPositionClicked" Margin="16,0,0,0"/>
+                      <Button Content="{loc:T ResetPosition}" Click="OnResetPositionClicked" Margin="16,0,0,0"/>
                     </StackPanel>
                   </Grid>
                 </StackPanel>
               </Expander>
-              <Expander Header="字体、颜色与特效">
+              <Expander Header="{loc:T FontColorAndEffects}">
                 <StackPanel>
                   <Grid>
                     <Grid.ColumnDefinitions>
@@ -200,16 +200,16 @@
                       <RowDefinition Height="Auto"/>
                       <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
-                    <Label Grid.Row="1" Grid.Column="0" Content="字体"/>
-                    <ComboBox Grid.Row="1" Grid.Column="1" Margin="0,2,0,2" ItemsSource="{x:Static vm:SettingsViewModel.AvailableFonts}" SelectedItem="{Binding FontFamily}" AutomationProperties.Name="字体"><ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Converter={StaticResource SettingLabel}}"/></DataTemplate></ComboBox.ItemTemplate></ComboBox>
-                    <Label Grid.Row="3" Grid.Column="0" Content="字重"/>
-                    <ComboBox Grid.Row="3" Grid.Column="1" Margin="0,2,0,2" ItemsSource="{x:Static vm:SettingsViewModel.AvailableFontWeights}" SelectedItem="{Binding FontWeight}" AutomationProperties.Name="字重"><ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Converter={StaticResource SettingLabel}}"/></DataTemplate></ComboBox.ItemTemplate></ComboBox>
-                    <Label Grid.Row="4" Grid.Column="0" Content="字间距"/>
-                    <Slider Grid.Row="4" Grid.Column="1" Minimum="0" Maximum="8" Value="{Binding LetterSpacing}" ToolTip="{Binding Value, RelativeSource={RelativeSource Self}, StringFormat={}{0:0.##}}" AutomationProperties.Name="字间距"/>
-                    <Label Grid.Row="5" Grid.Column="0" Content="行距"/>
-                    <Slider Grid.Row="5" Grid.Column="1" Minimum="0.8" Maximum="2.5" Value="{Binding LineHeight}" ToolTip="{Binding Value, RelativeSource={RelativeSource Self}, StringFormat={}{0:0.##}}" AutomationProperties.Name="行距"/>
-                    <Label Grid.Row="6" Grid.Column="0" Content="对齐"/>
-                    <ComboBox Grid.Row="6" Grid.Column="1" Margin="0,2,0,2" ItemsSource="{x:Static vm:SettingsViewModel.AvailableAlignments}" SelectedItem="{Binding Alignment}" AutomationProperties.Name="对齐"><ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Converter={StaticResource SettingLabel}}"/></DataTemplate></ComboBox.ItemTemplate></ComboBox>
+                    <Label Grid.Row="1" Grid.Column="0" Content="{loc:T Font}"/>
+                    <ComboBox Grid.Row="1" Grid.Column="1" Margin="0,2,0,2" ItemsSource="{x:Static vm:SettingsViewModel.AvailableFonts}" SelectedItem="{Binding FontFamily}" AutomationProperties.Name="{loc:T Font}"><ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Converter={StaticResource SettingLabel}}"/></DataTemplate></ComboBox.ItemTemplate></ComboBox>
+                    <Label Grid.Row="3" Grid.Column="0" Content="{loc:T Weight}"/>
+                    <ComboBox Grid.Row="3" Grid.Column="1" Margin="0,2,0,2" ItemsSource="{x:Static vm:SettingsViewModel.AvailableFontWeights}" SelectedItem="{Binding FontWeight}" AutomationProperties.Name="{loc:T Weight}"><ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Converter={StaticResource SettingLabel}}"/></DataTemplate></ComboBox.ItemTemplate></ComboBox>
+                    <Label Grid.Row="4" Grid.Column="0" Content="{loc:T LetterSpacing}"/>
+                    <Slider Grid.Row="4" Grid.Column="1" Minimum="0" Maximum="8" Value="{Binding LetterSpacing}" ToolTip="{Binding Value, RelativeSource={RelativeSource Self}, StringFormat={}{0:0.##}}" AutomationProperties.Name="{loc:T LetterSpacing}"/>
+                    <Label Grid.Row="5" Grid.Column="0" Content="{loc:T LineHeight}"/>
+                    <Slider Grid.Row="5" Grid.Column="1" Minimum="0.8" Maximum="2.5" Value="{Binding LineHeight}" ToolTip="{Binding Value, RelativeSource={RelativeSource Self}, StringFormat={}{0:0.##}}" AutomationProperties.Name="{loc:T LineHeight}"/>
+                    <Label Grid.Row="6" Grid.Column="0" Content="{loc:T Alignment}"/>
+                    <ComboBox Grid.Row="6" Grid.Column="1" Margin="0,2,0,2" ItemsSource="{x:Static vm:SettingsViewModel.AvailableAlignments}" SelectedItem="{Binding Alignment}" AutomationProperties.Name="{loc:T Alignment}"><ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Converter={StaticResource SettingLabel}}"/></DataTemplate></ComboBox.ItemTemplate></ComboBox>
                   </Grid>
                   <Grid>
                     <Grid.ColumnDefinitions>
@@ -225,19 +225,19 @@
                       <RowDefinition Height="Auto"/>
                       <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
-                    <Label Grid.Row="0" Grid.Column="0" Content="主色"/>
+                    <Label Grid.Row="0" Grid.Column="0" Content="{loc:T Primary}"/>
                     <views:ColorEditor Grid.Row="0" Grid.Column="1" Margin="0,3,0,3" ColorHex="{Binding PrimaryColor}"/>
-                    <Label Grid.Row="1" Grid.Column="0" Content="次级色"/>
+                    <Label Grid.Row="1" Grid.Column="0" Content="{loc:T Secondary}"/>
                     <views:ColorEditor Grid.Row="1" Grid.Column="1" Margin="0,3,0,3" ColorHex="{Binding SecondaryColor}"/>
-                    <Label Grid.Row="2" Grid.Column="0" Content="成功色"/>
+                    <Label Grid.Row="2" Grid.Column="0" Content="{loc:T SuccessColor}"/>
                     <views:ColorEditor Grid.Row="2" Grid.Column="1" Margin="0,3,0,3" ColorHex="{Binding SuccessColor}"/>
-                    <Label Grid.Row="3" Grid.Column="0" Content="警告色"/>
+                    <Label Grid.Row="3" Grid.Column="0" Content="{loc:T WarningColor}"/>
                     <views:ColorEditor Grid.Row="3" Grid.Column="1" Margin="0,3,0,3" ColorHex="{Binding WarningColor}"/>
-                    <Label Grid.Row="4" Grid.Column="0" Content="失败色"/>
+                    <Label Grid.Row="4" Grid.Column="0" Content="{loc:T ErrorColor}"/>
                     <views:ColorEditor Grid.Row="4" Grid.Column="1" Margin="0,3,0,3" ColorHex="{Binding ErrorColor}"/>
-                    <Label Grid.Row="5" Grid.Column="0" Content="描边色"/>
+                    <Label Grid.Row="5" Grid.Column="0" Content="{loc:T OutlineColor}"/>
                     <views:ColorEditor Grid.Row="5" Grid.Column="1" Margin="0,3,0,3" ColorHex="{Binding OutlineColor}"/>
-                    <Label Grid.Row="6" Grid.Column="0" Content="阴影色"/>
+                    <Label Grid.Row="6" Grid.Column="0" Content="{loc:T ShadowColor}"/>
                     <views:ColorEditor Grid.Row="6" Grid.Column="1" Margin="0,3,0,3" ColorHex="{Binding ShadowColor}"/>
                   </Grid>
                   <Grid>
@@ -254,30 +254,30 @@
                       <RowDefinition Height="Auto"/>
                       <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
-                    <Label Grid.Row="0" Grid.Column="0" Content="文字描边"/>
-                    <ComboBox Grid.Row="0" Grid.Column="1" Margin="0,2,0,2" ItemsSource="{x:Static vm:SettingsViewModel.AvailableOutlines}" SelectedItem="{Binding Outline}" AutomationProperties.Name="文字描边"><ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Converter={StaticResource SettingLabel}}"/></DataTemplate></ComboBox.ItemTemplate></ComboBox>
-                    <Label Grid.Row="1" Grid.Column="0" Content="描边粗细"/>
-                    <Slider Grid.Row="1" Grid.Column="1" Minimum="0.5" Maximum="4" Value="{Binding OutlineThickness}" ToolTip="{Binding Value, RelativeSource={RelativeSource Self}, StringFormat={}{0:0.##}}" AutomationProperties.Name="描边粗细"/>
-                    <Label Grid.Row="2" Grid.Column="0" Content="阴影"/>
-                    <ComboBox Grid.Row="2" Grid.Column="1" Margin="0,2,0,2" ItemsSource="{x:Static vm:SettingsViewModel.AvailableShadows}" SelectedItem="{Binding Shadow}" AutomationProperties.Name="阴影"><ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Converter={StaticResource SettingLabel}}"/></DataTemplate></ComboBox.ItemTemplate></ComboBox>
-                    <Label Grid.Row="3" Grid.Column="0" Content="背景"/>
-                    <ComboBox Grid.Row="3" Grid.Column="1" Margin="0,2,0,2" ItemsSource="{x:Static vm:SettingsViewModel.AvailableBackgrounds}" SelectedItem="{Binding Background}" AutomationProperties.Name="背景"><ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Converter={StaticResource SettingLabel}}"/></DataTemplate></ComboBox.ItemTemplate></ComboBox>
-                    <Label Grid.Row="4" Grid.Column="0" Content="背景色"/>
+                    <Label Grid.Row="0" Grid.Column="0" Content="{loc:T TextOutline}"/>
+                    <ComboBox Grid.Row="0" Grid.Column="1" Margin="0,2,0,2" ItemsSource="{x:Static vm:SettingsViewModel.AvailableOutlines}" SelectedItem="{Binding Outline}" AutomationProperties.Name="{loc:T TextOutline}"><ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Converter={StaticResource SettingLabel}}"/></DataTemplate></ComboBox.ItemTemplate></ComboBox>
+                    <Label Grid.Row="1" Grid.Column="0" Content="{loc:T OutlineThickness}"/>
+                    <Slider Grid.Row="1" Grid.Column="1" Minimum="0.5" Maximum="4" Value="{Binding OutlineThickness}" ToolTip="{Binding Value, RelativeSource={RelativeSource Self}, StringFormat={}{0:0.##}}" AutomationProperties.Name="{loc:T OutlineThickness}"/>
+                    <Label Grid.Row="2" Grid.Column="0" Content="{loc:T Shadow}"/>
+                    <ComboBox Grid.Row="2" Grid.Column="1" Margin="0,2,0,2" ItemsSource="{x:Static vm:SettingsViewModel.AvailableShadows}" SelectedItem="{Binding Shadow}" AutomationProperties.Name="{loc:T Shadow}"><ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Converter={StaticResource SettingLabel}}"/></DataTemplate></ComboBox.ItemTemplate></ComboBox>
+                    <Label Grid.Row="3" Grid.Column="0" Content="{loc:T Background}"/>
+                    <ComboBox Grid.Row="3" Grid.Column="1" Margin="0,2,0,2" ItemsSource="{x:Static vm:SettingsViewModel.AvailableBackgrounds}" SelectedItem="{Binding Background}" AutomationProperties.Name="{loc:T Background}"><ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Converter={StaticResource SettingLabel}}"/></DataTemplate></ComboBox.ItemTemplate></ComboBox>
+                    <Label Grid.Row="4" Grid.Column="0" Content="{loc:T BackgroundColor}"/>
                     <views:ColorEditor Grid.Row="4" Grid.Column="1" Margin="0,3,0,3" ColorHex="{Binding BackgroundColor}"/>
-                    <Label Grid.Row="5" Grid.Column="0" Content="背景不透明度"/>
-                    <Slider Grid.Row="5" Grid.Column="1" Minimum="0" Maximum="1" Value="{Binding BackgroundOpacity}" ToolTip="{Binding Value, RelativeSource={RelativeSource Self}, StringFormat={}{0:0.##}}" AutomationProperties.Name="背景不透明度"/>
-                    <Label Grid.Row="6" Grid.Column="0" Content="整体不透明度"/>
-                    <Slider Grid.Row="6" Grid.Column="1" Minimum="0.1" Maximum="1" Value="{Binding Opacity}" ToolTip="{Binding Value, RelativeSource={RelativeSource Self}, StringFormat={}{0:0.##}}" AutomationProperties.Name="整体不透明度"/>
+                    <Label Grid.Row="5" Grid.Column="0" Content="{loc:T BackgroundOpacity}"/>
+                    <Slider Grid.Row="5" Grid.Column="1" Minimum="0" Maximum="1" Value="{Binding BackgroundOpacity}" ToolTip="{Binding Value, RelativeSource={RelativeSource Self}, StringFormat={}{0:0.##}}" AutomationProperties.Name="{loc:T BackgroundOpacity}"/>
+                    <Label Grid.Row="6" Grid.Column="0" Content="{loc:T OverallOpacity}"/>
+                    <Slider Grid.Row="6" Grid.Column="1" Minimum="0.1" Maximum="1" Value="{Binding Opacity}" ToolTip="{Binding Value, RelativeSource={RelativeSource Self}, StringFormat={}{0:0.##}}" AutomationProperties.Name="{loc:T OverallOpacity}"/>
                   </Grid>
                 </StackPanel>
               </Expander>
-              <Expander Header="显示内容与精度">
+              <Expander Header="{loc:T ContentAndPrecision}">
                 <StackPanel>
                   <StackPanel Orientation="Horizontal">
-                    <CheckBox Content="显示 AZ" IsChecked="{Binding ShowAz}" Margin="0,0,16,0"/>
-                    <CheckBox Content="显示 RNG" IsChecked="{Binding ShowRng}" Margin="0,0,16,0"/>
-                    <CheckBox Content="显示炮位" IsChecked="{Binding ShowGun}" Margin="0,0,16,0"/>
-                    <CheckBox Content="显示目标" IsChecked="{Binding ShowTarget}"/>
+                    <CheckBox Content="{loc:T ShowAZ}" IsChecked="{Binding ShowAz}" Margin="0,0,16,0"/>
+                    <CheckBox Content="{loc:T ShowRNG}" IsChecked="{Binding ShowRng}" Margin="0,0,16,0"/>
+                    <CheckBox Content="{loc:T ShowGun}" IsChecked="{Binding ShowGun}" Margin="0,0,16,0"/>
+                    <CheckBox Content="{loc:T ShowTarget}" IsChecked="{Binding ShowTarget}"/>
                   </StackPanel>
                   <Grid Margin="0,8,0,0">
                     <Grid.ColumnDefinitions>
@@ -287,55 +287,55 @@
                       <ColumnDefinition Width="60"/>
                       <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <Label Grid.Column="0" Content="方位角小数位"/>
-                    <TextBox Grid.Column="1" Text="{Binding BearingDecimals}" AutomationProperties.Name="方位角小数位"/>
-                    <Label Grid.Column="2" Content="距离"/>
-                    <TextBox Grid.Column="3" Text="{Binding RangeDecimals}" AutomationProperties.Name="距离"/>
+                    <Label Grid.Column="0" Content="{loc:T AzimuthDecimals}"/>
+                    <TextBox Grid.Column="1" Text="{Binding BearingDecimals}" AutomationProperties.Name="{loc:T AzimuthDecimals}"/>
+                    <Label Grid.Column="2" Content="{loc:T Range}"/>
+                    <TextBox Grid.Column="3" Text="{Binding RangeDecimals}" AutomationProperties.Name="{loc:T Range}"/>
                   </Grid>
                 </StackPanel>
               </Expander>
-              <Expander Header="管理自定义主题">
+              <Expander Header="{loc:T ManageCustomThemes}">
                 <WrapPanel>
-                  <Button Content="应用" Click="OnApplyThemeClicked" Margin="0,4,8,4"/>
-                  <Button Content="另存为…" Click="OnDuplicateThemeClicked" Margin="0,4,8,4"/>
-                  <Button Content="重命名…" Click="OnRenameThemeClicked" Margin="0,4,8,4"/>
-                  <Button Content="覆盖保存" Click="OnOverwriteThemeClicked" Margin="0,4,8,4"/>
-                  <Button Content="删除" Click="OnDeleteThemeClicked" Margin="0,4,8,4"/>
-                  <Button Content="导入…" Click="OnImportThemeClicked" Margin="0,4,8,4"/>
-                  <Button Content="导出…" Click="OnExportThemeClicked" Margin="0,4,8,4"/>
+                  <Button Content="{loc:T Apply}" Click="OnApplyThemeClicked" Margin="0,4,8,4"/>
+                  <Button Content="{loc:T SaveAs}" Click="OnDuplicateThemeClicked" Margin="0,4,8,4"/>
+                  <Button Content="{loc:T Rename}" Click="OnRenameThemeClicked" Margin="0,4,8,4"/>
+                  <Button Content="{loc:T Overwrite}" Click="OnOverwriteThemeClicked" Margin="0,4,8,4"/>
+                  <Button Content="{loc:T Delete}" Click="OnDeleteThemeClicked" Margin="0,4,8,4"/>
+                  <Button Content="{loc:T Import}" Click="OnImportThemeClicked" Margin="0,4,8,4"/>
+                  <Button Content="{loc:T Export}" Click="OnExportThemeClicked" Margin="0,4,8,4"/>
                 </WrapPanel>
               </Expander>
             </StackPanel>
           </ScrollViewer>
           <DockPanel Grid.Column="2">
-            <TextBlock DockPanel.Dock="Top" Text="HUD 预览" Style="{StaticResource SectionHeader}"/>
+            <TextBlock DockPanel.Dock="Top" Text="{loc:T HUDPreview}" Style="{StaticResource SectionHeader}"/>
             <Border Background="{StaticResource SurfaceSunkenBrush}" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="12">
               <Grid>
-                <TextBlock Text="示例坐标 · 保存后应用到游戏" Foreground="{StaticResource SubtleTextBrush}" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="16" FontSize="11"/>
+                <TextBlock Text="{loc:T SampleCoordinatesAppliedInGameAfterSaving}" Foreground="{StaticResource SubtleTextBrush}" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="16" FontSize="11"/>
                 <views:HudRenderer x:Name="PreviewRenderer" Margin="10" VerticalAlignment="Center" HorizontalAlignment="Left"/>
               </Grid>
             </Border>
           </DockPanel>
         </Grid>
       </TabItem>
-      <TabItem Header="诊断">
+      <TabItem Header="{loc:T Diagnostics}">
         <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
           <StackPanel>
-            <TextBlock Text="保留证据，找到原因。" Style="{StaticResource PageTitle}"/>
-            <TextBlock Text="只保存光标附近的小块画面，所有诊断文件留在本机。" Style="{StaticResource Hint}"/>
+            <TextBlock Text="{loc:T KeepTheEvidenceFindTheCause}" Style="{StaticResource PageTitle}"/>
+            <TextBlock Text="{loc:T OnlyTheSmallAreaAroundTheCursorIsSavedAllDiagnos}" Style="{StaticResource Hint}"/>
             <Border Style="{StaticResource Card}" Margin="0,20,0,12">
               <StackPanel>
-                <TextBlock Text="偶尔识别失败？" FontSize="16" FontWeight="SemiBold"/>
-                <TextBlock Text="开启收集后回到游戏，正常按热键复现。接下来 10 次采集会保存原图、预处理图和识别结果，然后自动停止临时收集。" Style="{StaticResource Hint}" Margin="0,8,0,16"/>
+                <TextBlock Text="{loc:T OccasionalReadFailures}" FontSize="16" FontWeight="SemiBold"/>
+                <TextBlock Text="{loc:T AfterEnablingGoBackToTheGameAndReproduceWithTheH}" Style="{StaticResource Hint}" Margin="0,8,0,16"/>
                 <WrapPanel>
-                  <Button Content="收集接下来 10 次采集" Click="OnCollectDiagnosticsClicked" Style="{StaticResource PrimaryButton}"/>
-                  <Button Content="打开诊断目录" Click="OnOpenDebugFolderClicked"/>
+                  <Button Content="{loc:T CollectTheNext10Captures}" Click="OnCollectDiagnosticsClicked" Style="{StaticResource PrimaryButton}"/>
+                  <Button Content="{loc:T OpenDiagnosticsFolder}" Click="OnOpenDebugFolderClicked"/>
                 </WrapPanel>
               </StackPanel>
             </Border>
-            <Expander Header="识别参数（高级）">
+            <Expander Header="{loc:T RecognitionAdvanced}">
               <StackPanel>
-                <TextBlock Text="引擎与预处理" Style="{StaticResource SectionHeader}"/>
+                <TextBlock Text="{loc:T EngineAndPreprocessing}" Style="{StaticResource SectionHeader}"/>
                 <Grid>
                   <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="120"/>
@@ -346,14 +346,14 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                   </Grid.RowDefinitions>
-                  <Label Grid.Row="0" Grid.Column="0" Content="OCR 引擎"/>
-                  <ComboBox Grid.Row="0" Grid.Column="1" Margin="0,2,0,2" ItemsSource="{x:Static vm:SettingsViewModel.AvailableEngines}" SelectedItem="{Binding OcrEngine}" AutomationProperties.Name="OCR 引擎"><ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Converter={StaticResource SettingLabel}}"/></DataTemplate></ComboBox.ItemTemplate></ComboBox>
-                  <Label Grid.Row="1" Grid.Column="0" Content="预处理"/>
-                  <ComboBox Grid.Row="1" Grid.Column="1" Margin="0,2,0,2" ItemsSource="{x:Static vm:SettingsViewModel.AvailablePreprocessors}" SelectedItem="{Binding Preprocessor}" AutomationProperties.Name="预处理"><ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Converter={StaticResource SettingLabel}}"/></DataTemplate></ComboBox.ItemTemplate></ComboBox>
-                  <Label Grid.Row="2" Grid.Column="0" Content="Tessdata 路径"/>
-                  <TextBox Grid.Row="2" Grid.Column="1" Margin="0,2,0,2" Text="{Binding TessdataPath}" ToolTip="留空表示使用程序目录下的 Models\tessdata" AutomationProperties.Name="Tessdata 路径"/>
+                  <Label Grid.Row="0" Grid.Column="0" Content="{loc:T OCREngine}"/>
+                  <ComboBox Grid.Row="0" Grid.Column="1" Margin="0,2,0,2" ItemsSource="{x:Static vm:SettingsViewModel.AvailableEngines}" SelectedItem="{Binding OcrEngine}" AutomationProperties.Name="{loc:T OCREngine}"><ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Converter={StaticResource SettingLabel}}"/></DataTemplate></ComboBox.ItemTemplate></ComboBox>
+                  <Label Grid.Row="1" Grid.Column="0" Content="{loc:T Preprocessed}"/>
+                  <ComboBox Grid.Row="1" Grid.Column="1" Margin="0,2,0,2" ItemsSource="{x:Static vm:SettingsViewModel.AvailablePreprocessors}" SelectedItem="{Binding Preprocessor}" AutomationProperties.Name="{loc:T Preprocessed}"><ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Converter={StaticResource SettingLabel}}"/></DataTemplate></ComboBox.ItemTemplate></ComboBox>
+                  <Label Grid.Row="2" Grid.Column="0" Content="{loc:T TessdataPath}"/>
+                  <TextBox Grid.Row="2" Grid.Column="1" Margin="0,2,0,2" Text="{Binding TessdataPath}" ToolTip="{loc:T LeaveEmptyToUseModelsTessdataNextToTheExecutable}" AutomationProperties.Name="{loc:T TessdataPath}"/>
                 </Grid>
-                <TextBlock Text="鼠标相对 ROI" Style="{StaticResource SectionHeader}"/>
+                <TextBlock Text="{loc:T CursorInsideTheROI}" Style="{StaticResource SectionHeader}"/>
                 <Grid>
                   <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="120"/>
@@ -366,18 +366,18 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                   </Grid.RowDefinitions>
-                  <Label Grid.Row="0" Grid.Column="0" Content="宽度"/>
-                  <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding RoiWidth}" AutomationProperties.Name="宽度"/>
-                  <Label Grid.Row="0" Grid.Column="2" Content="高度"/>
-                  <TextBox Grid.Row="0" Grid.Column="3" Text="{Binding RoiHeight}" AutomationProperties.Name="高度"/>
-                  <Label Grid.Row="1" Grid.Column="0" Content="偏移 X"/>
-                  <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding RoiOffsetX}" AutomationProperties.Name="偏移 X"/>
-                  <Label Grid.Row="1" Grid.Column="2" Content="偏移 Y"/>
-                  <TextBox Grid.Row="1" Grid.Column="3" Text="{Binding RoiOffsetY}" AutomationProperties.Name="偏移 Y"/>
-                  <CheckBox Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Content="按分辨率自动缩放" IsChecked="{Binding RoiAutoScale}"/>
+                  <Label Grid.Row="0" Grid.Column="0" Content="{loc:T Width}"/>
+                  <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding RoiWidth}" AutomationProperties.Name="{loc:T Width}"/>
+                  <Label Grid.Row="0" Grid.Column="2" Content="{loc:T Height}"/>
+                  <TextBox Grid.Row="0" Grid.Column="3" Text="{Binding RoiHeight}" AutomationProperties.Name="{loc:T Height}"/>
+                  <Label Grid.Row="1" Grid.Column="0" Content="{loc:T OffsetX}"/>
+                  <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding RoiOffsetX}" AutomationProperties.Name="{loc:T OffsetX}"/>
+                  <Label Grid.Row="1" Grid.Column="2" Content="{loc:T OffsetY}"/>
+                  <TextBox Grid.Row="1" Grid.Column="3" Text="{Binding RoiOffsetY}" AutomationProperties.Name="{loc:T OffsetY}"/>
+                  <CheckBox Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Content="{loc:T ScaleWithResolution}" IsChecked="{Binding RoiAutoScale}"/>
                   <TextBox Grid.Row="2" Grid.Column="3" Text="{Binding RoiScale}" IsEnabled="{Binding RoiAutoScale, Converter={StaticResource InverseBool}}"/>
                 </Grid>
-                <TextBlock Text="校验阈值" Style="{StaticResource SectionHeader}"/>
+                <TextBlock Text="{loc:T ValidationThresholds}" Style="{StaticResource SectionHeader}"/>
                 <Grid>
                   <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="120"/>
@@ -389,59 +389,59 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                   </Grid.RowDefinitions>
-                  <Label Grid.Row="0" Grid.Column="0" Content="坐标最小值"/>
-                  <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding CoordinateMin}" AutomationProperties.Name="坐标最小值"/>
-                  <Label Grid.Row="0" Grid.Column="2" Content="坐标最大值"/>
-                  <TextBox Grid.Row="0" Grid.Column="3" Text="{Binding CoordinateMax}" AutomationProperties.Name="坐标最大值"/>
-                  <Label Grid.Row="1" Grid.Column="0" Content="最低置信度"/>
-                  <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding MinimumConfidence}" AutomationProperties.Name="最低置信度"/>
-                  <CheckBox Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="2" Content="必须识别出小数点" IsChecked="{Binding RequireDecimalPoint}"/>
+                  <Label Grid.Row="0" Grid.Column="0" Content="{loc:T CoordinateMin}"/>
+                  <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding CoordinateMin}" AutomationProperties.Name="{loc:T CoordinateMin}"/>
+                  <Label Grid.Row="0" Grid.Column="2" Content="{loc:T CoordinateMax}"/>
+                  <TextBox Grid.Row="0" Grid.Column="3" Text="{Binding CoordinateMax}" AutomationProperties.Name="{loc:T CoordinateMax}"/>
+                  <Label Grid.Row="1" Grid.Column="0" Content="{loc:T MinimumConfidence}"/>
+                  <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding MinimumConfidence}" AutomationProperties.Name="{loc:T MinimumConfidence}"/>
+                  <CheckBox Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="2" Content="{loc:T RequireADecimalPoint}" IsChecked="{Binding RequireDecimalPoint}"/>
                 </Grid>
               </StackPanel>
             </Expander>
-            <Expander Header="查看单次识别结果">
+            <Expander Header="{loc:T InspectASingleRecognition}">
               <DockPanel Grid.Column="0">
-                <TextBlock DockPanel.Dock="Top" Text="单次识别测试" Style="{StaticResource SectionHeader}"/>
-                <Button DockPanel.Dock="Top" Content="3 秒后测试并保存图片" HorizontalAlignment="Left" Margin="0,0,0,8" Click="OnTestOcrClicked"/>
+                <TextBlock DockPanel.Dock="Top" Text="{loc:T OneShotRecognitionTest}" Style="{StaticResource SectionHeader}"/>
+                <Button DockPanel.Dock="Top" Content="{loc:T TestingIn3SecondsAndSavingImages}" HorizontalAlignment="Left" Margin="0,0,0,8" Click="OnTestOcrClicked"/>
                 <Border DockPanel.Dock="Bottom" Padding="8">
                         </Border>
                 <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
                   <StackPanel>
-                    <TextBlock x:Name="TestRawLabel" Text="原始 ROI" Style="{StaticResource SectionHeader}"/>
+                    <TextBlock x:Name="TestRawLabel" Text="{loc:T RawROI}" Style="{StaticResource SectionHeader}"/>
                     <Border Background="#141414" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" MinHeight="80">
                       <Image x:Name="TestRawImage" Stretch="Uniform"/>
                     </Border>
-                    <TextBlock Text="预处理结果" Style="{StaticResource SectionHeader}"/>
+                    <TextBlock Text="{loc:T PreprocessedResult}" Style="{StaticResource SectionHeader}"/>
                     <Border Background="#141414" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" MinHeight="80">
                       <Image x:Name="TestProcessedImage" Stretch="Uniform"/>
                     </Border>
-                    <TextBlock Text="识别结果" Style="{StaticResource SectionHeader}"/>
-                    <TextBox x:Name="TestResultText" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="90" VerticalScrollBarVisibility="Auto" FontFamily="Consolas" FontSize="11" Text="尚未测试。当前光标必须指向游戏中的坐标读数。"/>
+                    <TextBlock Text="{loc:T RecognitionResult}" Style="{StaticResource SectionHeader}"/>
+                    <TextBox x:Name="TestResultText" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="90" VerticalScrollBarVisibility="Auto" FontFamily="Consolas" FontSize="11" Text="{loc:T NotTestedYetTheCursorMustBePointingAtTheCoordina}"/>
                   </StackPanel>
                 </ScrollViewer>
               </DockPanel>
             </Expander>
-            <Expander Header="持续调试与 HUD 调试信息">
+            <Expander Header="{loc:T OngoingDebugAndHUDDiagnostics}">
               <StackPanel MaxWidth="10000" HorizontalAlignment="Stretch">
-                <TextBlock Text="总开关" Style="{StaticResource SectionHeader}"/>
-                <CheckBox Content="启用 Debug 模式" IsChecked="{Binding DebugEnabled}" FontWeight="SemiBold"/>
-                <TextBlock Text="显示内容" Style="{StaticResource SectionHeader}"/>
-                <CheckBox Content="显示 ROI 矩形" IsChecked="{Binding ShowRoiRectangle}"/>
-                <CheckBox Content="显示光标锚点" IsChecked="{Binding ShowCursorAnchor}"/>
-                <CheckBox Content="显示 OCR 原始文本" IsChecked="{Binding ShowRawOcrText}"/>
-                <CheckBox Content="显示解析后的坐标" IsChecked="{Binding ShowParsedCoordinates}"/>
-                <CheckBox Content="显示置信度" IsChecked="{Binding ShowConfidence}"/>
-                <CheckBox Content="显示耗时" IsChecked="{Binding ShowTiming}"/>
-                <TextBlock Text="落盘" Style="{StaticResource SectionHeader}"/>
-                <CheckBox Content="保存原始 ROI" IsChecked="{Binding SaveRawRoi}"/>
-                <CheckBox Content="保存预处理结果" IsChecked="{Binding SaveProcessedRoi}"/>
-                <Button Content="打开 Debug 目录" HorizontalAlignment="Left" Margin="0,12,0,0" Click="OnOpenDebugFolderClicked"/>
+                <TextBlock Text="{loc:T MasterSwitch}" Style="{StaticResource SectionHeader}"/>
+                <CheckBox Content="{loc:T EnableDebugMode}" IsChecked="{Binding DebugEnabled}" FontWeight="SemiBold"/>
+                <TextBlock Text="{loc:T WhatToShow}" Style="{StaticResource SectionHeader}"/>
+                <CheckBox Content="{loc:T ShowROIRectangle}" IsChecked="{Binding ShowRoiRectangle}"/>
+                <CheckBox Content="{loc:T ShowCursorAnchor}" IsChecked="{Binding ShowCursorAnchor}"/>
+                <CheckBox Content="{loc:T ShowRawOCRText}" IsChecked="{Binding ShowRawOcrText}"/>
+                <CheckBox Content="{loc:T ShowParsedCoordinates}" IsChecked="{Binding ShowParsedCoordinates}"/>
+                <CheckBox Content="{loc:T ShowConfidence}" IsChecked="{Binding ShowConfidence}"/>
+                <CheckBox Content="{loc:T ShowTiming}" IsChecked="{Binding ShowTiming}"/>
+                <TextBlock Text="{loc:T SavedToDisk}" Style="{StaticResource SectionHeader}"/>
+                <CheckBox Content="{loc:T SaveRawROI}" IsChecked="{Binding SaveRawRoi}"/>
+                <CheckBox Content="{loc:T SavePreprocessedResult}" IsChecked="{Binding SaveProcessedRoi}"/>
+                <Button Content="{loc:T OpenDebugFolder}" HorizontalAlignment="Left" Margin="0,12,0,0" Click="OnOpenDebugFolderClicked"/>
 
-                <TextBlock Text="基准采样" Style="{StaticResource SectionHeader}"/>
-                <CheckBox Content="每次采集额外保存整屏 + 光标位置" IsChecked="{Binding SaveFullFrame}"/>
+                <TextBlock Text="{loc:T BaselineSampling}" Style="{StaticResource SectionHeader}"/>
+                <CheckBox Content="{loc:T AlsoSaveTheFullScreenCursorPositionOnEveryCaptur}" IsChecked="{Binding SaveFullFrame}"/>
                 <TextBlock Style="{StaticResource Hint}" Margin="0,6,0,0"
-                           Text="用来标定 ROI 默认值。整屏和光标在同一时刻记录，事后能量出坐标文字相对光标的准确方位——只看 ROI 推不出来。此项独立于上面的 Debug 总开关，采样文件在 Samples 子目录。"/>
-                <Button Content="打开采样目录" HorizontalAlignment="Left" Margin="0,12,0,0" Click="OnOpenSamplesFolderClicked"/>
+                           Text="{loc:T UsedToCalibrateTheDefaultROITheFullScreenAndTheC}"/>
+                <Button Content="{loc:T OpenSampleFolder}" HorizontalAlignment="Left" Margin="0,12,0,0" Click="OnOpenSamplesFolderClicked"/>
               </StackPanel>
             </Expander>
           </StackPanel>
