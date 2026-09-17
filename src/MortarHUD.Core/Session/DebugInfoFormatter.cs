@@ -1,4 +1,5 @@
 using System.Globalization;
+using MortarHUD.Localization;
 using MortarHUD.Core.Configuration;
 using MortarHUD.Core.Models;
 using MortarHUD.Core.Themes;
@@ -158,7 +159,7 @@ public static class DebugInfoFormatter
     {
         if (string.IsNullOrWhiteSpace(text))
         {
-            yield return "（空）";
+            yield return Loc.T("Empty2");
             yield break;
         }
 

@@ -1,4 +1,5 @@
 using OpenCvSharp;
+using MortarHUD.Localization;
 
 namespace MortarHUD.Capture.Ocr;
 
@@ -112,7 +113,7 @@ public static class GlyphNormalizer
     {
         if (a.Size() != b.Size())
         {
-            throw new ArgumentException("两张字形图的尺寸必须一致。", nameof(b));
+            throw new ArgumentException(Loc.T("BothGlyphImagesMustHaveTheSameSize"), nameof(b));
         }
 
         using var difference = new Mat();

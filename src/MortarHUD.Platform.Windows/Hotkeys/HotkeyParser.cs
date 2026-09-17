@@ -1,4 +1,5 @@
 using MortarHUD.Platform.Windows.NativeMethods;
+using MortarHUD.Localization;
 
 namespace MortarHUD.Platform.Windows.Hotkeys;
 
@@ -16,7 +17,7 @@ public static class HotkeyParser
 
         if (string.IsNullOrWhiteSpace(text))
         {
-            error = "热键为空。";
+            error = Loc.T("TheHotkeyIsEmpty");
             return false;
         }
 

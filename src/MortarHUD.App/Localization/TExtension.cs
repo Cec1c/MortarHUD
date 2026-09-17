@@ -1,5 +1,5 @@
 using System.Windows.Markup;
-using MortarHUD.Core.Localization;
+using MortarHUD.Localization;
 
 namespace MortarHUD.App.Localization;
 

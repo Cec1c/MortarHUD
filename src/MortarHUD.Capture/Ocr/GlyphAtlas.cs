@@ -1,4 +1,5 @@
 using System.Text.Json;
+using MortarHUD.Localization;
 using System.Text.Json.Serialization;
 using OpenCvSharp;
 
@@ -130,7 +131,7 @@ public sealed class GlyphAtlas
     {
         if (entries.Count != templates.Count)
         {
-            throw new ArgumentException("模板条数与位图数量不一致。", nameof(templates));
+            throw new ArgumentException(Loc.T("TheTemplateCountDoesNotMatchTheBitmapCount"), nameof(templates));
         }
 
         Directory.CreateDirectory(directory);

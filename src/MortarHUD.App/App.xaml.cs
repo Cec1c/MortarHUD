@@ -13,7 +13,7 @@ using MortarHUD.Core.Ballistics;
 using MortarHUD.Core.Configuration;
 using MortarHUD.Core.Diagnostics;
 using MortarHUD.Core.Models;
-using MortarHUD.Core.Localization;
+using MortarHUD.Localization;
 using MortarHUD.Core.Parsing;
 using MortarHUD.Core.Session;
 using MortarHUD.Core.Validation;
@@ -178,27 +178,27 @@ public partial class App : Application
             MortarHUD.Platform.Windows.NativeMethods.Win32.ATTACH_PARENT_PROCESS);
 
         Console.WriteLine();
-        Console.WriteLine("MortarHUD 启动自检");
+        Console.WriteLine(Loc.T("MortarHUDSelfTest"));
         Console.WriteLine(new string('-', 60));
 
         SetupLogging();
 
-        Step("使用默认设置", () => _settings = new MortarHudSettings());
-        Step("构建 OCR / 采集链路", BuildCoreServices);
-        Step("构造托盘图标（不显示）", () => _tray = new TrayIcon(visible: false));
-        Step("构造设置视图模型", () => _ = new ViewModels.SettingsViewModel(_settings));
+        Step(Loc.T("UseDefaults"), () => _settings = new MortarHudSettings());
+        Step(Loc.T("BuildTheOCRCapturePipeline"), BuildCoreServices);
+        Step(Loc.T("CreateTheTrayIconHidden"), () => _tray = new TrayIcon(visible: false));
+        Step(Loc.T("CreateTheSettingsViewModel"), () => _ = new ViewModels.SettingsViewModel(_settings));
 
         // 这一条就是之前启动即崩的地方：SettingsWindow 的构造函数。
-        Step("构造设置窗口（含全部 3 个页面与 HUD 预览）", () =>
+        Step(Loc.T("CreateTheSettingsWindowAll3PagesHUDPreview"), () =>
         {
             _settingsWindow = new SettingsWindow(_settings, () => Task.CompletedTask, TestCaptureAsync);
         });
 
-        Step("构造 HUD Overlay 窗口", () => _overlay = new OverlayWindow());
-        Step("构造 Debug 面板窗口", () => _debugOverlay = new DebugOverlayWindow());
-        Step("构造 HUD 控制器", () => _hud = new HudController(_session!, _overlay!, () => _settings.Hud));
+        Step(Loc.T("CreateTheHUDOverlayWindow"), () => _overlay = new OverlayWindow());
+        Step(Loc.T("CreateTheDebugPanelWindow"), () => _debugOverlay = new DebugOverlayWindow());
+        Step(Loc.T("CreateTheHUDController"), () => _hud = new HudController(_session!, _overlay!, () => _settings.Hud));
 
-        Step("跑一次端到端识别", () =>
+        Step(Loc.T("RunOneEndToEndRecognition"), () =>
         {
             using var sample = Cv2.ImRead(Path.Combine(AppContext.BaseDirectory, "Models", "selftest", "roi.png"));
             var result = _recognizer!.RecognizeAsync(sample, CancellationToken.None).GetAwaiter().GetResult();
@@ -212,7 +212,7 @@ public partial class App : Application
 
         if (failures.Count == 0)
         {
-            Console.WriteLine("自检通过。");
+            Console.WriteLine(Loc.T("SelfTestPassed"));
             _logger?.LogInformation("启动自检通过");
         }
         else
@@ -328,24 +328,24 @@ public partial class App : Application
         // 初始化阶段出错就直接退出，半死不活的状态更难排查。
         if (!_startupCompleted)
         {
-            ReportFatal("启动失败", e.Exception);
+            ReportFatal(Loc.T("StartupFailed"), e.Exception);
             e.Handled = true;
             Shutdown(1);
             return;
         }
 
         e.Handled = true;
-        _tray?.ShowBalloon("MortarHUD 遇到错误", e.Exception.Message, isError: true);
+        _tray?.ShowBalloon(Loc.T("MortarHUDError"), e.Exception.Message, isError: true);
     }
 
     private void OnDomainUnhandledException(object sender, UnhandledExceptionEventArgs e)
     {
         var exception = e.ExceptionObject as Exception;
-        _logger?.LogCritical(exception, "非 UI 线程未处理异常，进程即将结束");
+        _logger?.LogCritical(exception, Loc.T("UnhandledExceptionOnANonUIThreadTheProcessWillEx"));
 
         if (e.IsTerminating)
         {
-            ReportFatal("发生致命错误，程序即将退出", exception);
+            ReportFatal(Loc.T("FatalErrorTheApplicationWillExit"), exception);
         }
     }
 
@@ -520,7 +520,7 @@ public partial class App : Application
 
                 foreach (var result in observed.Where(r => !r.Success))
                 {
-                    errors.Add(result.Error ?? "地图键监听失败。");
+                    errors.Add(result.Error ?? Loc.T("FailedToListenForTheMapKey"));
                 }
 
                 _logger?.LogInformation("地图键监听已启用：{Key}（延迟 {Delay}ms）",
@@ -539,7 +539,7 @@ public partial class App : Application
         if (errors.Count > 0)
         {
             _tray?.ShowBalloon(
-                "热键注册失败",
+                Loc.T("HotkeyRegistrationFailed"),
                 string.Join(Environment.NewLine, errors),
                 isError: true);
         }
@@ -644,16 +644,16 @@ public partial class App : Application
                 {
                     if (attempt > 0) await Task.Delay(automatic ? 150 : 120, token);
                     token.ThrowIfCancellationRequested();
-                    if (DiscardIfContextChanged(token, "采集前")) return;
+                    if (DiscardIfContextChanged(token, Loc.T("BeforeTheCapture"))) return;
                     _debugObserver?.BeginRequest();
                     var outcome = await _captureService.CaptureAsync(token);
                     token.ThrowIfCancellationRequested();
-                    if (DiscardIfContextChanged(token, "采集后")) return;
+                    if (DiscardIfContextChanged(token, Loc.T("AfterTheCapture"))) return;
                     if (outcome.Recognition.Error == "BUSY") return;
                     outcome = _debugObserver?.AttachImages(outcome) ?? outcome;
                     _debugObserver?.WriteResult(outcome, isGun);
                     _logger?.LogInformation("采集 {Kind} 第 {Attempt} 次：{Details}",
-                        isGun ? "炮位" : "目标", attempt + 1,
+                        isGun ? Loc.T("Gun") : Loc.T("Target"), attempt + 1,
                         CoordinateRecognizer.DescribeAttempts(outcome.Recognition.Attempts));
                     if (outcome.Success || attempt == attempts - 1)
                     {
@@ -689,7 +689,7 @@ public partial class App : Application
 
             _logger?.LogInformation(
                 "采集 {Kind} 作废（{When}）：光标或前台窗口已变化",
-                isGun ? "炮位" : "目标", when);
+                isGun ? Loc.T("Gun") : Loc.T("Target"), when);
 
             _operations.TryCommit(
                 token, () => ReportStatus(MortarStatusKind.CaptureCancelled, "CONTEXT_CHANGED"));
@@ -712,7 +712,7 @@ public partial class App : Application
             if (isGun) _session.LockGun(coordinate);
             else _session.LockTarget(coordinate);
             _logger?.LogInformation("{Kind}已锁定：{X:0.00} / {Y:0.00}",
-                isGun ? "炮位" : "目标", coordinate.X, coordinate.Y);
+                isGun ? Loc.T("Gun") : Loc.T("Target"), coordinate.X, coordinate.Y);
         }
         else
         {
@@ -801,7 +801,7 @@ public partial class App : Application
         else
         {
             _logger?.LogWarning("设置开机自启失败：{Error}", error);
-            _tray?.ShowBalloon("开机自启设置失败", error ?? "未知原因", isError: true);
+            _tray?.ShowBalloon(Loc.T("FailedToChangeTheStartWithWindowsSetting"), error ?? Loc.T("UnknownCause"), isError: true);
         }
     }
 

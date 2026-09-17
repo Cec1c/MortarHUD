@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using MortarHUD.Localization;
 using System.Runtime.InteropServices;
 using MortarHUD.Platform.Windows.NativeMethods;
 
@@ -104,7 +105,7 @@ public sealed class GlobalHotkeyManager : IGlobalHotkeyService
                 {
                     if (!definition.IsValid)
                     {
-                        results.Add(HotkeyRegistrationResult.Failed(action, definition, "热键未设置。"));
+                        results.Add(HotkeyRegistrationResult.Failed(action, definition, Loc.T("TheHotkeyIsNotSet")));
                         continue;
                     }
 
@@ -153,7 +154,7 @@ public sealed class GlobalHotkeyManager : IGlobalHotkeyService
                     if (!definition.IsValid || definition.IsMouse || definition.Modifiers != 0)
                     {
                         results.Add(HotkeyRegistrationResult.Failed(
-                            action, definition, "这个键只能绑定单个键盘按键（不带修饰键）。"));
+                            action, definition, Loc.T("ThisCanOnlyBeBoundToASingleKeyboardKeyWithNoModi")));
                         continue;
                     }
 
@@ -204,7 +205,7 @@ public sealed class GlobalHotkeyManager : IGlobalHotkeyService
     {
         if (_hwnd == IntPtr.Zero)
         {
-            return HotkeyRegistrationResult.Failed(action, definition, "热键消息窗口未就绪。");
+            return HotkeyRegistrationResult.Failed(action, definition, Loc.T("TheHotkeyMessageWindowIsNotReady"));
         }
 
         _mouseBindings = new Dictionary<(MouseButton, uint), HotkeyAction>(_mouseBindings)
@@ -252,7 +253,7 @@ public sealed class GlobalHotkeyManager : IGlobalHotkeyService
         }
 
         Log?.Invoke($"原始输入注册失败（Win32 错误 {Marshal.GetLastWin32Error()}），"
-                    + "鼠标热键与地图键将不可用");
+                    + Loc.T("MouseHotkeysAndTheMapKeyWillBeUnavailable"));
     }
 
     public void UnregisterAll()
@@ -290,11 +291,11 @@ public sealed class GlobalHotkeyManager : IGlobalHotkeyService
 
     public static string Describe(HotkeyAction action) => action switch
     {
-        HotkeyAction.CaptureGun => "记录炮位",
-        HotkeyAction.CaptureTarget => "记录目标",
-        HotkeyAction.ToggleHud => "切换 HUD",
-        HotkeyAction.OpenSettings => "打开设置",
-        HotkeyAction.AutoCalibrateGun => "地图键自动校准炮位",
+        HotkeyAction.CaptureGun => Loc.T("RecordGun"),
+        HotkeyAction.CaptureTarget => Loc.T("RecordTarget"),
+        HotkeyAction.ToggleHud => Loc.T("ToggleHUD"),
+        HotkeyAction.OpenSettings => Loc.T("OpenSettings"),
+        HotkeyAction.AutoCalibrateGun => Loc.T("AutoCalibrateTheGunFromTheMapKey"),
         _ => action.ToString(),
     };
 
@@ -606,12 +607,12 @@ public sealed class GlobalHotkeyManager : IGlobalHotkeyService
             // 之前这里是「超时就当没事发生」，结果是热键静默失效、日志里一个字都没有。
             // 宁可抛出去让调用方看见。
             throw new TimeoutException(
-                "热键消息线程 5 秒内没有响应，注册未生效。这通常意味着输入线程被卡住了。");
+                Loc.T("TheHotkeyMessageThreadDidNotRespondWithin5Second"));
         }
 
         if (captured is not null)
         {
-            throw new InvalidOperationException("热键操作在消息线程上失败。", captured);
+            throw new InvalidOperationException(Loc.T("TheHotkeyOperationFailedOnTheMessageThread"), captured);
         }
     }
 

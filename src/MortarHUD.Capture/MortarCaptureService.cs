@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using MortarHUD.Localization;
 using System.Text.Json;
 using MortarHUD.Capture.Ocr;
 using MortarHUD.Capture.ScreenCapture;
@@ -109,7 +110,7 @@ public sealed class MortarCaptureService : IDisposable
         {
             if (!_cursorProvider.TryGetCursorPosition(out var cursorX, out var cursorY))
             {
-                return CaptureOutcome.Failed("CAPTURE_FAILED: 无法读取光标位置", totalWatch.Elapsed);
+                return CaptureOutcome.Failed(Loc.T("CAPTUREFAILEDCannotReadTheCursorPosition"), totalWatch.Elapsed);
             }
 
             var roi = _roiSettingsAccessor();

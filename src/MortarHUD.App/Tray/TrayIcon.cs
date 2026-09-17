@@ -1,4 +1,5 @@
 using System.Drawing;
+using MortarHUD.Localization;
 using System.Windows.Forms;
 
 namespace MortarHUD.App.Tray;
@@ -25,21 +26,21 @@ public sealed class TrayIcon : IDisposable
     {
         _icon = CreateCrosshairIcon();
 
-        _toggleHudItem = new ToolStripMenuItem("显示 HUD", null, (_, _) => ToggleHudRequested?.Invoke(this, EventArgs.Empty))
+        _toggleHudItem = new ToolStripMenuItem(Loc.T("ShowHUD"), null, (_, _) => ToggleHudRequested?.Invoke(this, EventArgs.Empty))
         {
             CheckOnClick = false,
         };
 
-        _debugItem = new ToolStripMenuItem("Debug 模式", null, (_, _) => ToggleDebugRequested?.Invoke(this, EventArgs.Empty))
+        _debugItem = new ToolStripMenuItem(Loc.T("DebugMode"), null, (_, _) => ToggleDebugRequested?.Invoke(this, EventArgs.Empty))
         {
             CheckOnClick = false,
         };
 
-        _captureGunItem = new ToolStripMenuItem("记录炮位", null, (_, _) => CaptureGunRequested?.Invoke(this, EventArgs.Empty));
-        _captureTargetItem = new ToolStripMenuItem("记录目标", null, (_, _) => CaptureTargetRequested?.Invoke(this, EventArgs.Empty));
+        _captureGunItem = new ToolStripMenuItem(Loc.T("RecordGun"), null, (_, _) => CaptureGunRequested?.Invoke(this, EventArgs.Empty));
+        _captureTargetItem = new ToolStripMenuItem(Loc.T("RecordTarget"), null, (_, _) => CaptureTargetRequested?.Invoke(this, EventArgs.Empty));
 
         var menu = new ContextMenuStrip();
-        menu.Items.Add(new ToolStripMenuItem("打开设置", null, (_, _) => ShowSettingsRequested?.Invoke(this, EventArgs.Empty)));
+        menu.Items.Add(new ToolStripMenuItem(Loc.T("OpenSettings"), null, (_, _) => ShowSettingsRequested?.Invoke(this, EventArgs.Empty)));
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add(_toggleHudItem);
         menu.Items.Add(_captureGunItem);
@@ -47,12 +48,12 @@ public sealed class TrayIcon : IDisposable
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add(_debugItem);
         menu.Items.Add(new ToolStripSeparator());
-        menu.Items.Add(new ToolStripMenuItem("退出", null, (_, _) => ExitRequested?.Invoke(this, EventArgs.Empty)));
+        menu.Items.Add(new ToolStripMenuItem(Loc.T("Exit"), null, (_, _) => ExitRequested?.Invoke(this, EventArgs.Empty)));
 
         _notifyIcon = new NotifyIcon
         {
             Icon = _icon,
-            Text = "MortarHUD —— 迫击炮坐标解算",
+            Text = Loc.T("MortarHUDMortarCoordinateSolver"),
             Visible = visible,
             ContextMenuStrip = menu,
         };
@@ -82,14 +83,14 @@ public sealed class TrayIcon : IDisposable
             return;
         }
 
-        _captureGunItem.Text = string.IsNullOrEmpty(captureGun) ? "记录炮位" : $"记录炮位（{captureGun}）";
-        _captureTargetItem.Text = string.IsNullOrEmpty(captureTarget) ? "记录目标" : $"记录目标（{captureTarget}）";
+        _captureGunItem.Text = string.IsNullOrEmpty(captureGun) ? Loc.T("RecordGun") : $"记录炮位（{captureGun}）";
+        _captureTargetItem.Text = string.IsNullOrEmpty(captureTarget) ? Loc.T("RecordTarget") : $"记录目标（{captureTarget}）";
     }
 
     public void UpdateState(bool hudVisible, bool debugEnabled, bool positionUnlocked)
     {
         _toggleHudItem.Checked = hudVisible;
-        _toggleHudItem.Text = positionUnlocked ? "锁定 HUD 位置" : "显示 HUD";
+        _toggleHudItem.Text = positionUnlocked ? Loc.T("LockHUDPosition") : Loc.T("ShowHUD");
         _debugItem.Checked = debugEnabled;
     }
 

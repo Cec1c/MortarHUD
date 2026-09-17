@@ -1,4 +1,5 @@
 using System.Text.Json;
+using MortarHUD.Localization;
 using System.Text.Json.Serialization;
 using MortarHUD.Core.Configuration;
 
@@ -89,7 +90,7 @@ public sealed class HudThemeStore
 
         if (string.IsNullOrWhiteSpace(theme.Name))
         {
-            throw new ArgumentException("主题必须有名字。", nameof(theme));
+            throw new ArgumentException(Loc.T("AThemeMustHaveAName"), nameof(theme));
         }
 
         System.IO.Directory.CreateDirectory(_directory);

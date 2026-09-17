@@ -1,4 +1,5 @@
 using System.Runtime.Versioning;
+using MortarHUD.Localization;
 using Microsoft.Win32;
 
 namespace MortarHUD.Platform.Windows.Startup;
@@ -55,7 +56,7 @@ public static class WindowsStartupRegistration
 
                 if (string.IsNullOrEmpty(executable))
                 {
-                    error = "无法确定程序自身的路径。";
+                    error = Loc.T("CannotDetermineTheApplicationSOwnPath");
                     return false;
                 }
 

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using MortarHUD.Localization;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
@@ -117,7 +118,7 @@ public partial class SettingsWindow : Window
 
         _recordingHotkeyBox = box;
         _hotkeyBeforeRecording = box.Text;
-        box.Text = "请按键或鼠标键…";
+        box.Text = Loc.T("PressAKeyOrMouseButton");
 
         // 被录制的那个键要拦下来，否则按下 F6 会直接把当前值又填回去。
         box.PreviewKeyDown -= OnHotkeyBoxKeyDown;
@@ -150,7 +151,7 @@ public partial class SettingsWindow : Window
 
         if (!definition.IsValid)
         {
-            box.Text = "这个键不支持";
+            box.Text = Loc.T("ThisKeyIsNotSupported");
             e.Handled = true;
             return;
         }
@@ -277,7 +278,7 @@ public partial class SettingsWindow : Window
         _viewModel.AutoCalibrateKey = defaults.AutoCalibrateKey;
         _viewModel.AutoCalibrateDelayMs = defaults.AutoCalibrateDelayMs;
 
-        StatusText.Text = "热键已恢复默认，点「应用」后生效。";
+        StatusText.Text = Loc.T("HotkeysRestoredToDefaultsClickApplyToTakeEffect");
     }
 
     // ================================================================ HUD 位置
@@ -290,8 +291,8 @@ public partial class SettingsWindow : Window
         }
 
         StatusText.Text = UnlockPositionCheck.IsChecked == true
-            ? "HUD 已解锁：直接拖动屏幕上的 HUD 调整位置，调好后取消勾选即可恢复鼠标穿透。"
-            : "HUD 已锁定，恢复鼠标穿透。";
+            ? Loc.T("HUDUnlockedDragItOnScreenToMoveItUncheckToRestor")
+            : Loc.T("HUDLockedClickThroughRestored");
 
         _settings.Hud.PositionUnlocked = _viewModel.PositionUnlocked;
         try { await _onApply(); }
@@ -317,7 +318,7 @@ public partial class SettingsWindow : Window
 
     private void OnDuplicateThemeClicked(object sender, RoutedEventArgs e)
     {
-        var name = PromptForText("另存为主题", "新主题名称：", $"{_viewModel.WorkingTheme.Name} 副本");
+        var name = PromptForText(Loc.T("SaveAsTheme"), Loc.T("NewThemeName"), $"{_viewModel.WorkingTheme.Name} 副本");
         if (name is null)
         {
             return;
@@ -331,7 +332,7 @@ public partial class SettingsWindow : Window
     {
         if (_viewModel.SelectedTheme?.IsBuiltIn != false)
         {
-            Warn("内置主题不能覆盖保存，请用「另存为」。");
+            Warn(Loc.T("ABuiltInThemeCannotBeOverwrittenUseSaveAs"));
             return;
         }
 
@@ -348,11 +349,11 @@ public partial class SettingsWindow : Window
 
         if (_viewModel.SelectedTheme.IsBuiltIn)
         {
-            Warn("内置主题不能改名。可以先「另存为」再改。");
+            Warn(Loc.T("BuiltInThemesCannotBeRenamedUseSaveAsFirst"));
             return;
         }
 
-        var name = PromptForText("重命名主题", "新名称：", _viewModel.SelectedTheme.Name);
+        var name = PromptForText(Loc.T("RenameTheme"), Loc.T("NewName"), _viewModel.SelectedTheme.Name);
         if (name is null)
         {
             return;
@@ -360,7 +361,7 @@ public partial class SettingsWindow : Window
 
         if (!_viewModel.RenameSelectedTheme(name, out var error))
         {
-            Warn(error ?? "重命名失败。");
+            Warn(error ?? Loc.T("RenameFailed"));
             return;
         }
 
@@ -387,18 +388,18 @@ public partial class SettingsWindow : Window
 
         if (!_viewModel.DeleteSelectedTheme(out var error))
         {
-            Warn(error ?? "删除失败。");
+            Warn(error ?? Loc.T("DeleteFailed"));
             return;
         }
 
-        StatusText.Text = "主题已删除。";
+        StatusText.Text = Loc.T("ThemeDeleted");
     }
 
     private void OnImportThemeClicked(object sender, RoutedEventArgs e)
     {
         var dialog = new OpenFileDialog
         {
-            Title = "导入主题",
+            Title = Loc.T("ImportTheme"),
             Filter = "MortarHUD 主题 (*.json)|*.json|所有文件 (*.*)|*.*",
             InitialDirectory = AppPaths.ThemesDirectory,
         };
@@ -410,18 +411,18 @@ public partial class SettingsWindow : Window
 
         if (!_viewModel.ImportTheme(dialog.FileName, out var error))
         {
-            Warn(error ?? "导入失败。");
+            Warn(error ?? Loc.T("ImportFailed"));
             return;
         }
 
-        StatusText.Text = "主题已导入。";
+        StatusText.Text = Loc.T("ThemeImported");
     }
 
     private void OnExportThemeClicked(object sender, RoutedEventArgs e)
     {
         var dialog = new SaveFileDialog
         {
-            Title = "导出主题",
+            Title = Loc.T("ExportTheme"),
             Filter = "MortarHUD 主题 (*.json)|*.json",
             FileName = $"{_viewModel.WorkingTheme.Name}.json",
             InitialDirectory = AppPaths.ThemesDirectory,
@@ -434,7 +435,7 @@ public partial class SettingsWindow : Window
 
         if (!_viewModel.ExportTheme(dialog.FileName, out var error))
         {
-            Warn(error ?? "导出失败。");
+            Warn(error ?? Loc.T("ExportFailed"));
             return;
         }
 
@@ -489,7 +490,7 @@ public partial class SettingsWindow : Window
             report.AppendLine($"Total     {outcome.TotalTime.TotalMilliseconds:0.0} ms");
 
             report.AppendLine();
-            report.AppendLine("各流水线：");
+            report.AppendLine(Loc.T("Pipelines"));
 
             foreach (var attempt in outcome.Recognition.Attempts)
             {
@@ -530,7 +531,7 @@ public partial class SettingsWindow : Window
     /// </remarks>
     private Task LoadTestImagesAsync(CaptureOutcome outcome)
     {
-        TestRawLabel.Text = outcome.RawImagePath is null ? "本次未保存原图，请先开启诊断收集" : "本次原始 ROI";
+        TestRawLabel.Text = outcome.RawImagePath is null ? Loc.T("NoRawImageWasSavedForThisRunEnableDiagnosticColl") : Loc.T("RawROIOfThisRun");
         TestRawImage.Source = outcome.RawImagePath is { } raw ? LoadBitmap(raw) : null;
         TestProcessedImage.Source = outcome.ProcessedImagePath is { } processed ? LoadBitmap(processed) : null;
         return Task.CompletedTask;
@@ -556,13 +557,13 @@ public partial class SettingsWindow : Window
 
     private static string Describe(string text)
         => string.IsNullOrWhiteSpace(text)
-            ? "（空）"
+            ? Loc.T("Empty2")
             : text.Replace("\r", "").Replace("\n", " | ").Trim();
 
     private void OnCollectDiagnosticsClicked(object sender, RoutedEventArgs e)
     {
         _collectDiagnostics?.Invoke(10);
-        StatusText.Text = "已开启：接下来 10 次采集保存完整诊断。返回游戏后按热键复现即可。";
+        StatusText.Text = Loc.T("EnabledTheNext10CapturesWillSaveFullDiagnosticsG");
     }
 
     private void OnOpenDebugFolderClicked(object sender, RoutedEventArgs e)
@@ -679,14 +680,14 @@ public partial class SettingsWindow : Window
 
         string? result = null;
 
-        var ok = new Button { Content = "确定", Width = 76, IsDefault = true };
+        var ok = new Button { Content = Loc.T("TextOK"), Width = 76, IsDefault = true };
         ok.Click += (_, _) =>
         {
             result = input.Text;
             window.Close();
         };
 
-        var cancel = new Button { Content = "取消", Width = 76, IsCancel = true, Margin = new Thickness(8, 0, 0, 0) };
+        var cancel = new Button { Content = Loc.T("Cancel"), Width = 76, IsCancel = true, Margin = new Thickness(8, 0, 0, 0) };
         cancel.Click += (_, _) => window.Close();
 
         buttons.Children.Add(ok);

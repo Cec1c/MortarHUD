@@ -1,4 +1,5 @@
 using OpenCvSharp;
+using MortarHUD.Localization;
 
 namespace MortarHUD.Capture.ImageProcessing;
 
@@ -25,7 +26,7 @@ public abstract class PreprocessorBase : IImagePreprocessor
 
         if (input.Empty())
         {
-            throw new ImagePreprocessingException("ROI 为空，没有可处理的像素。");
+            throw new ImagePreprocessingException(Loc.T("TheROIIsEmptyThereIsNothingToProcess"));
         }
 
         using var gray = ToGray(input);

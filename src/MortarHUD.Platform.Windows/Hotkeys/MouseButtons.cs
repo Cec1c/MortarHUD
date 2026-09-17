@@ -1,3 +1,5 @@
+using MortarHUD.Localization;
+
 namespace MortarHUD.Platform.Windows.Hotkeys;
 
 /// <summary>
@@ -39,18 +41,20 @@ public static class MouseButtonNames
     /// <summary>界面上显示的名字。</summary>
     public static string GetDisplayName(MouseButton button) => button switch
     {
-        MouseButton.Left => "鼠标左键",
-        MouseButton.Right => "鼠标右键",
-        MouseButton.Middle => "鼠标中键",
-        MouseButton.X1 => "鼠标侧键 1",
-        MouseButton.X2 => "鼠标侧键 2",
-        _ => "鼠标中键",
+        MouseButton.Left => Loc.T("LeftMouse"),
+        MouseButton.Right => Loc.T("RightMouse"),
+        MouseButton.Middle => Loc.T("MiddleMouse"),
+        MouseButton.X1 => Loc.T("MouseButton4"),
+        MouseButton.X2 => Loc.T("MouseButton5"),
+        _ => Loc.T("MiddleMouse"),
     };
 
     public static bool TryParse(string name, out MouseButton button)
     {
         switch (name.Trim().ToLowerInvariant())
         {
+            // 这里的中文是**解析别名**而不是界面文案：settings.json 允许手写中文键名，
+            // 所以它们必须原样留在代码里，不能跟着界面语言走。
             case "mouseleft" or "lbutton" or "lmb" or "鼠标左键":
                 button = MouseButton.Left;
                 return true;

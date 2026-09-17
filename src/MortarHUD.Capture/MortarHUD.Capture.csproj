@@ -20,7 +20,12 @@
   </ItemGroup>
 
   <ItemGroup>
+
     <ProjectReference Include="..\MortarHUD.Core\MortarHUD.Core.csproj" />
+
+
+    <ProjectReference Include="..\MortarHUD.Localization\MortarHUD.Localization.csproj" />
+
     <ProjectReference Include="..\MortarHUD.Platform.Windows\MortarHUD.Platform.Windows.csproj" />
   </ItemGroup>
 

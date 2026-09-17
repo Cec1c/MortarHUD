@@ -1,4 +1,4 @@
-namespace MortarHUD.Core.Localization;
+namespace MortarHUD.Localization;
 
 /// <summary>
 /// 界面文案的查表入口。

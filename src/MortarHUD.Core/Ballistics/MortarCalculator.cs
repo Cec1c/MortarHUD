@@ -1,4 +1,5 @@
 using MortarHUD.Core.Models;
+using MortarHUD.Localization;
 
 namespace MortarHUD.Core.Ballistics;
 
@@ -30,7 +31,7 @@ public sealed class MortarCalculator : IMortarCalculator
             throw new ArgumentOutOfRangeException(
                 nameof(metersPerCoordinateUnit),
                 metersPerCoordinateUnit,
-                "每坐标单位的米数必须是正有限数。");
+                Loc.T("MetersPerCoordinateUnitMustBeAPositiveFiniteNumb"));
         }
 
         MetersPerCoordinateUnit = metersPerCoordinateUnit;

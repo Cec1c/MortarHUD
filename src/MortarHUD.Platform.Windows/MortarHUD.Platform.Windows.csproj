@@ -10,4 +10,8 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\MortarHUD.Localization\MortarHUD.Localization.csproj" />
+  </ItemGroup>
+
 </Project>

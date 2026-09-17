@@ -1,4 +1,5 @@
 using System.Globalization;
+using MortarHUD.Localization;
 using MortarHUD.Core.Configuration;
 using MortarHUD.Core.Themes;
 
@@ -171,14 +172,14 @@ public static class HudLayoutFormatter
     /// <summary>把状态枚举翻成 HUD 上显示的短句（TDD §20 / §38）。</summary>
     public static string DescribeStatus(MortarStatusKind status) => status switch
     {
-        MortarStatusKind.GunLocked => "炮位已锁定",
-        MortarStatusKind.TargetLocked => "目标已锁定",
-        MortarStatusKind.OcrFailed => "识别失败",
-        MortarStatusKind.NoGunPosition => "未记录炮位",
-        MortarStatusKind.InvalidCoordinate => "坐标超出范围",
-        MortarStatusKind.CaptureFailed => "截图失败",
-        MortarStatusKind.CaptureCancelled => "光标移动，已取消",
-        MortarStatusKind.AutoCalibrateSkipped => "地图没打开",
+        MortarStatusKind.GunLocked => Loc.T("GunLocked"),
+        MortarStatusKind.TargetLocked => Loc.T("TargetLocked"),
+        MortarStatusKind.OcrFailed => Loc.T("RecognitionFailed"),
+        MortarStatusKind.NoGunPosition => Loc.T("NoGunRecorded"),
+        MortarStatusKind.InvalidCoordinate => Loc.T("CoordinateOutOfRange"),
+        MortarStatusKind.CaptureFailed => Loc.T("CaptureFailed"),
+        MortarStatusKind.CaptureCancelled => Loc.T("CursorMovedCancelled"),
+        MortarStatusKind.AutoCalibrateSkipped => Loc.T("MapNotOpen"),
         _ => "",
     };
 
@@ -188,11 +189,11 @@ public static class HudLayoutFormatter
     /// </summary>
     public static string? DescribeStatusDetail(MortarStatusKind status) => status switch
     {
-        MortarStatusKind.OcrFailed => "目标未改变",
-        MortarStatusKind.InvalidCoordinate => "目标未改变",
-        MortarStatusKind.CaptureFailed => "目标未改变",
-        MortarStatusKind.CaptureCancelled => "目标未改变",
-        MortarStatusKind.AutoCalibrateSkipped => "再按一次 M",
+        MortarStatusKind.OcrFailed => Loc.T("TargetUnchanged"),
+        MortarStatusKind.InvalidCoordinate => Loc.T("TargetUnchanged"),
+        MortarStatusKind.CaptureFailed => Loc.T("TargetUnchanged"),
+        MortarStatusKind.CaptureCancelled => Loc.T("TargetUnchanged"),
+        MortarStatusKind.AutoCalibrateSkipped => Loc.T("PressMAgain"),
         _ => null,
     };
 }

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using MortarHUD.Localization;
 using MortarHUD.Capture.ImageProcessing;
 using MortarHUD.Core.Models;
 using MortarHUD.Core.Parsing;
@@ -43,12 +44,12 @@ public sealed class CoordinateRecognizer
         _observer = observer;
         if (engines.Count == 0)
         {
-            throw new ArgumentException("至少要有一个可用的 OCR 引擎。", nameof(engines));
+            throw new ArgumentException(Loc.T("AtLeastOneUsableOCREngineIsRequired"), nameof(engines));
         }
 
         if (preprocessors.Count == 0)
         {
-            throw new ArgumentException("至少要有一条预处理流水线。", nameof(preprocessors));
+            throw new ArgumentException(Loc.T("AtLeastOnePreprocessingPipelineIsRequired"), nameof(preprocessors));
         }
 
         _engines = engines;
@@ -316,7 +317,7 @@ public sealed class CoordinateRecognizer
                 : attempt.Error ?? "FAIL";
 
             var raw = string.IsNullOrWhiteSpace(attempt.RawText)
-                ? "(空)"
+                ? Loc.T("Empty")
                 : attempt.RawText.Replace('\r', ' ').Replace('\n', '|').Trim();
 
             lines.Add($"{attempt.Engine}/{attempt.Pipeline} {outcome} raw=[{raw}]");

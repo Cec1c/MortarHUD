@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using MortarHUD.Localization;
 using MortarHUD.Platform.Windows.NativeMethods;
 using OpenCvSharp;
 
@@ -59,7 +60,7 @@ public sealed class GdiScreenCaptureProvider : IScreenCaptureProvider
             screenDc = Gdi32.GetDC(IntPtr.Zero);
             if (screenDc == IntPtr.Zero)
             {
-                throw new ScreenCaptureException("GetDC(桌面) 失败，无法访问屏幕。");
+                throw new ScreenCaptureException(Loc.T("GetDCDesktopFailedTheScreenIsNotAccessible"));
             }
 
             memoryDc = Gdi32.CreateCompatibleDC(screenDc);
@@ -104,7 +105,7 @@ public sealed class GdiScreenCaptureProvider : IScreenCaptureProvider
             {
                 throw new ScreenCaptureException(
                     $"BitBlt 失败（Win32 错误 {Marshal.GetLastWin32Error()}）。"
-                    + "独占全屏模式下屏幕捕获可能不可用，请改用无边框窗口模式。");
+                    + Loc.T("ScreenCaptureMayNotWorkInExclusiveFullscreenUseB"));
             }
 
             // DIB 是 BGRA，OCR 只关心灰度信息，转成 BGR 去掉 alpha 通道。
@@ -119,7 +120,7 @@ public sealed class GdiScreenCaptureProvider : IScreenCaptureProvider
         }
         catch (Exception ex)
         {
-            throw new ScreenCaptureException("屏幕捕获发生未预期错误。", ex);
+            throw new ScreenCaptureException(Loc.T("UnexpectedErrorDuringScreenCapture"), ex);
         }
         finally
         {

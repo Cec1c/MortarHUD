@@ -1,4 +1,4 @@
-namespace MortarHUD.Core.Localization;
+namespace MortarHUD.Localization;
 
 /// <summary>
 /// 中英文文案表。键由 <c>_analysis/gen-loc-table.py</c> 生成，两张表必须成对。

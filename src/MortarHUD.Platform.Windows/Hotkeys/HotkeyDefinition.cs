@@ -1,4 +1,5 @@
 using MortarHUD.Platform.Windows.NativeMethods;
+using MortarHUD.Localization;
 
 namespace MortarHUD.Platform.Windows.Hotkeys;
 
@@ -69,7 +70,7 @@ public readonly record struct HotkeyDefinition(
     {
         if (!IsValid)
         {
-            return "（未设置）";
+            return Loc.T("NotSet");
         }
 
         if (IsMouse)

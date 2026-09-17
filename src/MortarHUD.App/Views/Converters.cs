@@ -1,4 +1,5 @@
 using System.Globalization;
+using MortarHUD.Localization;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
@@ -66,15 +67,15 @@ public sealed class SettingLabelConverter : IValueConverter
         => value?.ToString() switch
         {
             "Minimal" => "极简数值", "Compact" => "紧凑双行", "Detailed" => "详细信息", "Horizontal" => "单行排列",
-            "TopLeft" => "左上", "TopCenter" => "顶部居中", "TopRight" => "右上",
+            "TopLeft" => Loc.T("TopLeft"), "TopCenter" => "顶部居中", "TopRight" => "右上",
             "CenterLeft" => "左侧居中", "Center" => "居中", "CenterRight" => "右侧居中",
-            "BottomLeft" => "左下", "BottomCenter" => "底部居中", "BottomRight" => "右下",
-            "Off" => "关闭", "Thin" => "细", "Medium" => "适中", "Thick" => "粗",
-            "Soft" => "柔和", "Hard" => "硬边", "None" => "无背景",
+            "BottomLeft" => Loc.T("BottomLeft"), "BottomCenter" => "底部居中", "BottomRight" => "右下",
+            "Off" => Loc.T("Close"), "Thin" => "细", "Medium" => "适中", "Thick" => "粗",
+            "Soft" => Loc.T("Soft"), "Hard" => Loc.T("Hard"), "None" => "无背景",
             "TransparentPanel" => "半透明面板", "SolidPanel" => "纯色面板",
-            "Left" => "左对齐", "Right" => "右对齐", "Auto" => "自动",
-            "Template" => "字形模板", "Light" => "细体", "Normal" => "常规",
-            "SemiBold" => "半粗体", "Bold" => "粗体",
+            "Left" => Loc.T("Left"), "Right" => Loc.T("Right"), "Auto" => Loc.T("Auto"),
+            "Template" => Loc.T("GlyphTemplates"), "Light" => Loc.T("Light"), "Normal" => Loc.T("Regular"),
+            "SemiBold" => Loc.T("SemiBold"), "Bold" => Loc.T("Bold"),
             "Default Green" => "默认绿", "Tactical White" => "战术白", "Amber" => "琥珀", "High Contrast" => "高对比",
             _ => value?.ToString() ?? "",
         };

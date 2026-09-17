@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    界面文案表单独成项目，因为它被两个互不引用的兄弟层同时需要：
+    Core（HUD 状态文案）与 Platform.Windows（热键、鼠标键的显示名）。
+    放任何一边都会逼出反向依赖，所以按「最底层共享」处理。
+    不引用任何东西，也不依赖 WPF/WinForms——App 侧的 XAML 标记扩展另有其人。
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>MortarHUD.Localization</RootNamespace>
+  </PropertyGroup>
+
+</Project>

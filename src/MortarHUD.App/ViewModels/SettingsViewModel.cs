@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using MortarHUD.Localization;
 using System.IO;
 using MortarHUD.Core.Configuration;
 using MortarHUD.Core.Themes;
@@ -563,7 +564,7 @@ public sealed class SettingsViewModel : ObservableObject
 
         if (SelectedTheme is null)
         {
-            error = "没有选中主题。";
+            error = Loc.T("NoThemeIsSelected");
             return false;
         }
 
@@ -592,7 +593,7 @@ public sealed class SettingsViewModel : ObservableObject
 
         if (SelectedTheme is null)
         {
-            error = "没有选中主题。";
+            error = Loc.T("NoThemeIsSelected");
             return false;
         }
 
@@ -604,7 +605,7 @@ public sealed class SettingsViewModel : ObservableObject
 
         if (string.IsNullOrWhiteSpace(newName))
         {
-            error = "主题名不能为空。";
+            error = Loc.T("TheThemeNameCannotBeEmpty");
             return false;
         }
 
@@ -660,7 +661,7 @@ public sealed class SettingsViewModel : ObservableObject
 
             if (theme is null || string.IsNullOrWhiteSpace(theme.Name))
             {
-                error = "文件里没有有效的主题。";
+                error = Loc.T("TheFileContainsNoValidTheme");
                 return false;
             }
 
@@ -679,7 +680,7 @@ public sealed class SettingsViewModel : ObservableObject
 
     private string MakeUniqueName(string baseName)
     {
-        var name = string.IsNullOrWhiteSpace(baseName) ? "自定义主题" : baseName.Trim();
+        var name = string.IsNullOrWhiteSpace(baseName) ? Loc.T("Custom") : baseName.Trim();
 
         if (!Themes.Any(t => string.Equals(t.Name, name, StringComparison.OrdinalIgnoreCase)))
         {
