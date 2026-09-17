@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using MortarHUD.Localization;
 using MortarHUD.Core.Configuration;
 using MortarHUD.Core.Models;
 using OpenCvSharp;
@@ -54,7 +55,7 @@ public sealed class TesseractOcrEngine : ICoordinateOcrEngine
     {
         if (!Directory.Exists(TessdataPath))
         {
-            return $"tessdata 目录不存在：{TessdataPath}";
+            return Loc.F("TessdataDirectoryNotFound", TessdataPath);
         }
 
         var languageFile = Path.Combine(TessdataPath, _settings.Language + ".traineddata");
@@ -161,7 +162,7 @@ public sealed class TesseractOcrEngine : ICoordinateOcrEngine
         catch (Exception ex)
         {
             _initializationError =
-                $"Tesseract 初始化失败：{ex.Message}（tessdata 路径：{TessdataPath}）";
+                Loc.F("TesseractFailedToInitializeTessdataPath", ex.Message, TessdataPath);
             return null;
         }
     }

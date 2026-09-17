@@ -84,6 +84,13 @@ public partial class App : Application
 
         AppPaths.EnsureDirectories();
 
+        // 设置与语言要在所有分支之前定好：
+        // - 界面文案是构造时求值的（见 TExtension），窗口一起来就晚了；
+        // - 「已经在运行了」那条提示、以及自检/截图两种诊断模式同样会构造窗口。
+        _settingsStore = new SettingsStore();
+        _settings = _settingsStore.Load();
+        Loc.Language = _settings.General.Language;
+
         // ---- 诊断模式 ----
         //
         // 自检与离屏截图要放在单实例检查<em>之前</em>：
@@ -106,13 +113,6 @@ public partial class App : Application
         // ---- 正常运行 ----
 
         // 单实例：跑两份会出现两个 Overlay 抢置顶，热键第二次注册也必然失败。
-        // 设置要在单实例检查之前读：那条「已经在运行了」的提示也得按用户的语言显示。
-        _settingsStore = new SettingsStore();
-        _settings = _settingsStore.Load();
-
-        // 界面文案是构造时求值的（见 TExtension），所以语言必须在任何窗口或对话框出现之前定好。
-        Loc.Language = _settings.General.Language;
-
         _singleInstanceMutex = new Mutex(initiallyOwned: true, SingleInstanceMutexName, out var isFirstInstance);
         if (!isFirstInstance)
         {
@@ -304,7 +304,7 @@ public partial class App : Application
                     encoder.Save(stream);
                 }
 
-                Console.WriteLine($"已渲染 {path}");
+                Console.WriteLine(Loc.F("Rendered", path));
             }
 
             Console.WriteLine($"共 {count} 页。");
@@ -312,7 +312,7 @@ public partial class App : Application
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"离屏渲染失败：{ex}");
+            Console.WriteLine(Loc.F("OffscreenRenderFailed", ex));
             Shutdown(1);
         }
     }

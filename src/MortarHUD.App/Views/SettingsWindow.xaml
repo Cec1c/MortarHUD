@@ -102,7 +102,20 @@
                   <TextBlock Text="{loc:T Startup}" Style="{StaticResource SectionHeader}"/>
                   <CheckBox Content="{loc:T StartMinimizedToTray}" IsChecked="{Binding StartMinimized}"/>
                   <CheckBox Content="{loc:T StartWithWindows}" IsChecked="{Binding StartWithWindows}"/>
-                  <TextBlock Text="{loc:T ClosingTheWindowKeepsMortarHUDRunningInTheSystem}" Style="{StaticResource Hint}" Margin="0,8,0,0"/><Expander Header="{loc:T CoordinateConversionAndAxes}">
+                  <TextBlock Text="{loc:T ClosingTheWindowKeepsMortarHUDRunningInTheSystem}" Style="{StaticResource Hint}" Margin="0,8,0,0"/>
+
+                  <TextBlock Text="{loc:T Language}" Style="{StaticResource SectionHeader}" Margin="0,16,0,0"/>
+                  <!--
+                    语言名不翻译：中文就叫「中文」，英文就叫 English——
+                    把语言名译成当前语言会让用户找不到自己想切的那一项。
+                  -->
+                  <ComboBox SelectedValue="{Binding Language}" SelectedValuePath="Tag"
+                            Width="200" HorizontalAlignment="Left">
+                    <ComboBoxItem Content="中文" Tag="zh-CN"/>
+                    <ComboBoxItem Content="English" Tag="en"/>
+                  </ComboBox>
+                  <TextBlock Text="{loc:T LanguageHint}" Style="{StaticResource Hint}" Margin="0,8,0,0"/>
+                  <Expander Header="{loc:T CoordinateConversionAndAxes}">
                     <StackPanel>
                       <TextBlock Text="{loc:T CoordinateConversion}" Style="{StaticResource SectionHeader}"/>
                       <Grid>

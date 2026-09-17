@@ -84,7 +84,7 @@ public sealed class TrayIcon : IDisposable
         }
 
         _captureGunItem.Text = string.IsNullOrEmpty(captureGun) ? Loc.T("RecordGun") : $"记录炮位（{captureGun}）";
-        _captureTargetItem.Text = string.IsNullOrEmpty(captureTarget) ? Loc.T("RecordTarget") : $"记录目标（{captureTarget}）";
+        _captureTargetItem.Text = string.IsNullOrEmpty(captureTarget) ? Loc.T("RecordTarget") : Loc.F("RecordTarget2", captureTarget);
     }
 
     public void UpdateState(bool hudVisible, bool debugEnabled, bool positionUnlocked)

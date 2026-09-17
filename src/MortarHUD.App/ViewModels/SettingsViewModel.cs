@@ -570,7 +570,7 @@ public sealed class SettingsViewModel : ObservableObject
 
         if (SelectedTheme.IsBuiltIn)
         {
-            error = $"内置主题「{SelectedTheme.Name}」不能删除，可以先「另存为」再改。";
+            error = Loc.F("BuiltInThemeCannotBeDeletedUseSaveAsFirst", SelectedTheme.Name);
             return false;
         }
 
@@ -599,7 +599,7 @@ public sealed class SettingsViewModel : ObservableObject
 
         if (SelectedTheme.IsBuiltIn)
         {
-            error = $"内置主题「{SelectedTheme.Name}」不能改名。";
+            error = Loc.F("BuiltInThemeCannotBeRenamed", SelectedTheme.Name);
             return false;
         }
 

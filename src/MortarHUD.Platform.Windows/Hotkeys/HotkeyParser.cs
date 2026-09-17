@@ -51,7 +51,7 @@ public static class HotkeyParser
 
             if (keySeen)
             {
-                error = $"「{text}」里有多个主键，一个热键只能有一个主键。";
+                error = Loc.F("HasMoreThanOneMainKeyAHotkeyTakesExactlyOne", text);
                 return false;
             }
 
@@ -76,7 +76,7 @@ public static class HotkeyParser
 
         if (!keySeen)
         {
-            error = $"「{text}」里没有主键。";
+            error = Loc.F("HasNoMainKey", text);
             return false;
         }
 

@@ -6,7 +6,7 @@ namespace MortarHUD.Localization;
 /// <remarks>
 /// 这个文件是生成的，但可以手工改英文——改完不用重跑脚本，脚本只在新增文案时用。
 /// </remarks>
-internal static class Strings
+public static class Strings
 {
     private static readonly Dictionary<string, (string Zh, string En)> Table = new(StringComparer.Ordinal)
     {
@@ -250,6 +250,12 @@ internal static class Strings
         ["RecordTarget"] = ("记录目标", "Record target"),
         ["RecordTarget2"] = ("记录目标（{0}）", "Record target ({0})"),
         ["SettingsTakeEffectAfterYouClickApply"] = ("设置在点击应用后生效。", "Settings take effect after you click Apply."),
+
+        // 下面几条是手工加的：文案表由脚本生成，但加条目不必重跑脚本。
+        // 键里没有对应英文（"Language" 不是译文），改手写反而更清楚。
+        ["Language"] = ("语言", "Language"),
+        ["LanguageHint"] = ("界面语言。切换后需要重启程序才会生效。",
+                            "Interface language. Restarting the app is required to apply a change."),
         ["RecognitionAdvanced"] = ("识别参数（高级）", "Recognition (advanced)"),
         ["RecognitionFailed"] = ("识别失败", "Recognition failed"),
         ["RecognitionResult"] = ("识别结果", "Recognition result"),
@@ -286,7 +292,7 @@ internal static class Strings
         ["Empty2"] = ("（空）", "(empty)"),
     };
 
-    internal static string Lookup(string key, string language)
+    public static string Lookup(string key, string language)
     {
         // 漏翻一条不该让程序起不来：取不到就回落中文，再取不到就把键名原样返回，
         // 这样界面上会出现一个明显的占位串，比空白更容易发现。
@@ -298,5 +304,5 @@ internal static class Strings
         return language == Loc.English && !string.IsNullOrEmpty(entry.En) ? entry.En : entry.Zh;
     }
 
-    internal static IReadOnlyDictionary<string, (string Zh, string En)> All => Table;
+    public static IReadOnlyDictionary<string, (string Zh, string En)> All => Table;
 }

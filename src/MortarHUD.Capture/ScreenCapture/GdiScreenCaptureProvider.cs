@@ -39,7 +39,7 @@ public sealed class GdiScreenCaptureProvider : IScreenCaptureProvider
 
         if (physicalPixelRect.Width <= 0 || physicalPixelRect.Height <= 0)
         {
-            throw new ScreenCaptureException($"ROI 尺寸非法：{physicalPixelRect.Width}x{physicalPixelRect.Height}。");
+            throw new ScreenCaptureException(Loc.F("InvalidROISizeX", physicalPixelRect.Width, physicalPixelRect.Height));
         }
 
         lock (_sync)

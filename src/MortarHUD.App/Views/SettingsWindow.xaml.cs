@@ -296,7 +296,7 @@ public partial class SettingsWindow : Window
 
         _settings.Hud.PositionUnlocked = _viewModel.PositionUnlocked;
         try { await _onApply(); }
-        catch (Exception ex) { Warn($"应用失败：{ex.Message}"); }
+        catch (Exception ex) { Warn(Loc.F("ApplyFailed", ex.Message)); }
     }
 
     private void OnResetPositionClicked(object sender, RoutedEventArgs e)
@@ -325,7 +325,7 @@ public partial class SettingsWindow : Window
         }
 
         var saved = _viewModel.SaveAsNewTheme(name);
-        StatusText.Text = $"已保存自定义主题「{saved.Name}」。";
+        StatusText.Text = Loc.F("SavedCustomTheme", saved.Name);
     }
 
     private void OnOverwriteThemeClicked(object sender, RoutedEventArgs e)
@@ -337,7 +337,7 @@ public partial class SettingsWindow : Window
         }
 
         _viewModel.OverwriteSelectedTheme();
-        StatusText.Text = $"已覆盖保存主题「{_viewModel.SelectedTheme?.Name}」。";
+        StatusText.Text = Loc.F("OverwroteTheme", _viewModel.SelectedTheme?.Name);
     }
 
     private void OnRenameThemeClicked(object sender, RoutedEventArgs e)
@@ -376,7 +376,7 @@ public partial class SettingsWindow : Window
         }
 
         var confirm = MessageBox.Show(
-            $"确定要删除主题「{_viewModel.SelectedTheme.Name}」吗？",
+            Loc.F("DeleteTheTheme", _viewModel.SelectedTheme.Name),
             "MortarHUD",
             MessageBoxButton.OKCancel,
             MessageBoxImage.Warning);
@@ -439,7 +439,7 @@ public partial class SettingsWindow : Window
             return;
         }
 
-        StatusText.Text = $"主题已导出到 {dialog.FileName}";
+        StatusText.Text = Loc.F("ThemeExportedTo", dialog.FileName);
     }
 
     // ================================================================ Test OCR
@@ -467,7 +467,7 @@ public partial class SettingsWindow : Window
             TestProcessedImage.Source = null;
 
             var report = new System.Text.StringBuilder();
-            report.AppendLine($"光标      {outcome.Cursor.X}, {outcome.Cursor.Y}");
+            report.AppendLine(Loc.F("Cursor", outcome.Cursor.X, outcome.Cursor.Y));
             report.AppendLine($"ROI       X={outcome.Roi.X} Y={outcome.Roi.Y} "
                               + $"W={outcome.Roi.Width} H={outcome.Roi.Height}");
             report.AppendLine();
@@ -496,8 +496,8 @@ public partial class SettingsWindow : Window
             {
                 report.AppendLine($"  {attempt.Engine}/{attempt.Pipeline}  "
                                   + $"{(attempt.Success ? "OK" : attempt.Error)}");
-                report.AppendLine($"    原始文本: {Describe(attempt.RawText)}");
-                report.AppendLine($"    修正文本: {Describe(attempt.RepairedText)}");
+                report.AppendLine(Loc.F("Raw", Describe(attempt.RawText)));
+                report.AppendLine(Loc.F("Repaired", Describe(attempt.RepairedText)));
                 report.AppendLine($"    置信度 {attempt.Confidence:0.00}  "
                                   + $"预处理 {attempt.PreprocessTime.TotalMilliseconds:0.0}ms  "
                                   + $"OCR {attempt.OcrTime.TotalMilliseconds:0.0}ms");
@@ -512,7 +512,7 @@ public partial class SettingsWindow : Window
         }
         catch (Exception ex)
         {
-            StatusText.Text = $"测试出错：{ex.Message}";
+            StatusText.Text = Loc.F("TestFailed", ex.Message);
         }
         finally
         {
@@ -585,7 +585,7 @@ public partial class SettingsWindow : Window
         }
         catch (Exception ex)
         {
-            Warn($"打开目录失败：{ex.Message}");
+            Warn(Loc.F("FailedToOpenTheFolder", ex.Message));
         }
     }
 
@@ -617,12 +617,12 @@ public partial class SettingsWindow : Window
         {
             _viewModel.SaveTo(_settings);
             await _onApply();
-            StatusText.Text = $"已应用（{DateTime.Now:HH:mm:ss}）。";
+            StatusText.Text = Loc.F("AppliedAt", DateTime.Now);
             return true;
         }
         catch (Exception ex)
         {
-            Warn($"应用失败：{ex.Message}");
+            Warn(Loc.F("ApplyFailed", ex.Message));
             return false;
         }
     }
