@@ -23,6 +23,8 @@ public sealed record CaptureOutcome
     public TimeSpan CaptureTime { get; init; }
 
     public TimeSpan TotalTime { get; init; }
+    public string? RawImagePath { get; init; }
+    public string? ProcessedImagePath { get; init; }
 
     public bool Success => Recognition.Success;
 

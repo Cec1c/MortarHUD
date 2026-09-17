@@ -25,7 +25,7 @@ public class OcrPipelineTests
     {
         CoordinateMin = 0,
         CoordinateMax = 200,
-        MinimumConfidence = 0.0,   // 置信度门槛单独测，这里只量识别正确率
+        MinimumConfidence = new OcrSettings().MinimumConfidence,
     });
 
     /// <summary>

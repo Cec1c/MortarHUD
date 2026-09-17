@@ -12,7 +12,9 @@
 
   <ItemGroup>
     <PackageReference Include="OpenCvSharp4" Version="4.10.0.20240616" />
-    <PackageReference Include="OpenCvSharp4.runtime.win" Version="4.10.0.20240616" />
+    <!-- 只处理静态 ROI；从依赖清单生成阶段排除视频插件和 x86，再显式携带 x64 计算库。 -->
+    <PackageReference Include="OpenCvSharp4.runtime.win" Version="4.10.0.20240616"
+                      ExcludeAssets="all" PrivateAssets="all" GeneratePathProperty="true" />
     <PackageReference Include="Tesseract" Version="5.2.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />
   </ItemGroup>
@@ -20,6 +22,12 @@
   <ItemGroup>
     <ProjectReference Include="..\MortarHUD.Core\MortarHUD.Core.csproj" />
     <ProjectReference Include="..\MortarHUD.Platform.Windows\MortarHUD.Platform.Windows.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="$(PkgOpenCvSharp4_runtime_win)\runtimes\win-x64\native\OpenCvSharpExtern.dll"
+             Link="OpenCvSharpExtern.dll" CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

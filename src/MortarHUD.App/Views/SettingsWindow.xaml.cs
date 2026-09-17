@@ -26,7 +26,8 @@ namespace MortarHUD.App.Views;
 public partial class SettingsWindow : Window
 {
     private readonly MortarHudSettings _settings;
-    private readonly Action _onApply;
+    private readonly Func<Task> _onApply;
+    private readonly Action<int>? _collectDiagnostics;
     private readonly Func<Task<CaptureOutcome>> _testCapture;
     private readonly SettingsViewModel _viewModel;
 
@@ -35,14 +36,15 @@ public partial class SettingsWindow : Window
 
     public SettingsWindow(
         MortarHudSettings settings,
-        Action onApply,
-        Func<Task<CaptureOutcome>> testCapture)
+        Func<Task> onApply,
+        Func<Task<CaptureOutcome>> testCapture, Action<int>? collectDiagnostics = null)
     {
         ArgumentNullException.ThrowIfNull(settings);
 
         _settings = settings;
         _onApply = onApply;
         _testCapture = testCapture;
+        _collectDiagnostics = collectDiagnostics;
 
         InitializeComponent();
 
@@ -271,13 +273,16 @@ public partial class SettingsWindow : Window
         _viewModel.CaptureTarget = defaults.CaptureTarget;
         _viewModel.ToggleHudHotkey = defaults.ToggleHud;
         _viewModel.OpenSettingsHotkey = defaults.OpenSettings;
+        _viewModel.AutoCalibrateEnabled = defaults.AutoCalibrateEnabled;
+        _viewModel.AutoCalibrateKey = defaults.AutoCalibrateKey;
+        _viewModel.AutoCalibrateDelayMs = defaults.AutoCalibrateDelayMs;
 
         StatusText.Text = "热键已恢复默认，点「应用」后生效。";
     }
 
     // ================================================================ HUD 位置
 
-    private void OnUnlockPositionToggled(object sender, RoutedEventArgs e)
+    private async void OnUnlockPositionToggled(object sender, RoutedEventArgs e)
     {
         if (!IsLoaded)
         {
@@ -288,7 +293,9 @@ public partial class SettingsWindow : Window
             ? "HUD 已解锁：直接拖动屏幕上的 HUD 调整位置，调好后取消勾选即可恢复鼠标穿透。"
             : "HUD 已锁定，恢复鼠标穿透。";
 
-        _onApply();
+        _settings.Hud.PositionUnlocked = _viewModel.PositionUnlocked;
+        try { await _onApply(); }
+        catch (Exception ex) { Warn($"应用失败：{ex.Message}"); }
     }
 
     private void OnResetPositionClicked(object sender, RoutedEventArgs e)
@@ -443,10 +450,16 @@ public partial class SettingsWindow : Window
             return;
         }
 
-        StatusText.Text = "正在测试…";
-
+        var button = sender as Button;
+        if (button is not null) button.IsEnabled = false;
         try
         {
+            for (var seconds = 3; seconds > 0; seconds--)
+            {
+                StatusText.Text = $"{seconds} 秒后采集：请切回游戏，指向坐标读数并保持不动。";
+                await Task.Delay(1000);
+            }
+            _collectDiagnostics?.Invoke(1);
             var outcome = await _testCapture();
 
             TestRawImage.Source = null;
@@ -500,6 +513,10 @@ public partial class SettingsWindow : Window
         {
             StatusText.Text = $"测试出错：{ex.Message}";
         }
+        finally
+        {
+            if (button is not null) button.IsEnabled = true;
+        }
     }
 
     /// <summary>
@@ -513,38 +530,9 @@ public partial class SettingsWindow : Window
     /// </remarks>
     private Task LoadTestImagesAsync(CaptureOutcome outcome)
     {
-        var debugDirectory = AppPaths.DebugDirectory;
-
-        if (!Directory.Exists(debugDirectory))
-        {
-            TestRawLabel.Text = "原始 ROI（勾选 Debug → 保存原始 ROI 后可见）";
-            return Task.CompletedTask;
-        }
-
-        var latest = Directory.EnumerateFiles(debugDirectory, "*_raw.png")
-            .Select(path => new FileInfo(path))
-            .OrderByDescending(info => info.LastWriteTime)
-            .FirstOrDefault();
-
-        if (latest is null)
-        {
-            TestRawLabel.Text = "原始 ROI（勾选 Debug → 保存原始 ROI 后可见）";
-            return Task.CompletedTask;
-        }
-
-        TestRawLabel.Text = $"原始 ROI — {latest.Name}";
-        TestRawImage.Source = LoadBitmap(latest.FullName);
-
-        var processed = Directory.EnumerateFiles(debugDirectory, "*_processed.png")
-            .Select(path => new FileInfo(path))
-            .OrderByDescending(info => info.LastWriteTime)
-            .FirstOrDefault();
-
-        if (processed is not null)
-        {
-            TestProcessedImage.Source = LoadBitmap(processed.FullName);
-        }
-
+        TestRawLabel.Text = outcome.RawImagePath is null ? "本次未保存原图，请先开启诊断收集" : "本次原始 ROI";
+        TestRawImage.Source = outcome.RawImagePath is { } raw ? LoadBitmap(raw) : null;
+        TestProcessedImage.Source = outcome.ProcessedImagePath is { } processed ? LoadBitmap(processed) : null;
         return Task.CompletedTask;
     }
 
@@ -570,6 +558,12 @@ public partial class SettingsWindow : Window
         => string.IsNullOrWhiteSpace(text)
             ? "（空）"
             : text.Replace("\r", "").Replace("\n", " | ").Trim();
+
+    private void OnCollectDiagnosticsClicked(object sender, RoutedEventArgs e)
+    {
+        _collectDiagnostics?.Invoke(10);
+        StatusText.Text = "已开启：接下来 10 次采集保存完整诊断。返回游戏后按热键复现即可。";
+    }
 
     private void OnOpenDebugFolderClicked(object sender, RoutedEventArgs e)
     {
@@ -608,24 +602,27 @@ public partial class SettingsWindow : Window
         }
     }
 
-    private void OnApplyClicked(object sender, RoutedEventArgs e)
+    private async void OnApplyClicked(object sender, RoutedEventArgs e) => await ApplyAsync();
+
+    private async Task<bool> ApplyAsync()
     {
         try
         {
             _viewModel.SaveTo(_settings);
-            _onApply();
+            await _onApply();
             StatusText.Text = $"已应用（{DateTime.Now:HH:mm:ss}）。";
+            return true;
         }
         catch (Exception ex)
         {
             Warn($"应用失败：{ex.Message}");
+            return false;
         }
     }
 
-    private void OnOkClicked(object sender, RoutedEventArgs e)
+    private async void OnOkClicked(object sender, RoutedEventArgs e)
     {
-        OnApplyClicked(sender, e);
-        Close();
+        if (await ApplyAsync()) Close();
     }
 
     private void OnCancelClicked(object sender, RoutedEventArgs e) => Close();

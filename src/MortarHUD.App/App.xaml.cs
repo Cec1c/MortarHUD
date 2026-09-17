@@ -5,6 +5,7 @@ using MortarHUD.App.Services;
 using MortarHUD.App.Tray;
 using MortarHUD.App.Views;
 using MortarHUD.Capture;
+using MortarHUD.Capture.Diagnostics;
 using MortarHUD.Capture.ImageProcessing;
 using MortarHUD.Capture.Ocr;
 using MortarHUD.Capture.ScreenCapture;
@@ -54,10 +55,10 @@ public partial class App : Application
     private HudController? _hud;
     private MortarCaptureService? _captureService;
     private DebugArtifactWriter? _debugWriter;
-    private DebugSessionObserver? _debugObserver;
+    private CaptureDiagnostics? _debugObserver;
+    private CoordinateRecognizer? _recognizer;
 
-    /// <summary>挂起的自动校准。任何其它操作都会把它取消掉。</summary>
-    private CancellationTokenSource? _pendingAutoCalibrate;
+    private readonly LatestOperationRunner _operations = new();
     private List<ICoordinateOcrEngine> _ocrEngines = [];
 
     /// <summary>OnStartup 是否已完整跑完。用于区分「启动期崩溃」和「运行期崩溃」。</summary>
@@ -177,15 +178,15 @@ public partial class App : Application
 
         SetupLogging();
 
-        Step("加载设置", () => _settings = new SettingsStore().Load());
+        Step("使用默认设置", () => _settings = new MortarHudSettings());
         Step("构建 OCR / 采集链路", BuildCoreServices);
-        Step("构造托盘图标", () => _tray = new TrayIcon());
+        Step("构造托盘图标（不显示）", () => _tray = new TrayIcon(visible: false));
         Step("构造设置视图模型", () => _ = new ViewModels.SettingsViewModel(_settings));
 
         // 这一条就是之前启动即崩的地方：SettingsWindow 的构造函数。
-        Step("构造设置窗口（含全部 6 个页面与 HUD 预览）", () =>
+        Step("构造设置窗口（含全部 3 个页面与 HUD 预览）", () =>
         {
-            _settingsWindow = new SettingsWindow(_settings, () => { }, TestCaptureAsync);
+            _settingsWindow = new SettingsWindow(_settings, () => Task.CompletedTask, TestCaptureAsync);
         });
 
         Step("构造 HUD Overlay 窗口", () => _overlay = new OverlayWindow());
@@ -194,12 +195,12 @@ public partial class App : Application
 
         Step("跑一次端到端识别", () =>
         {
-            var fixtureDirectory = Path.Combine(AppContext.BaseDirectory, "Models");
-            _ = fixtureDirectory;   // 自检不依赖 fixture，只验证链路能跑起来
-            var outcome = _captureService!.CaptureAsync().GetAwaiter().GetResult();
-            Console.WriteLine($"       采集结果：{(outcome.Success ? "成功" : outcome.Recognition.Error)}"
-                              + $"（{outcome.TotalTime.TotalMilliseconds:0} ms，"
-                              + $"ROI {outcome.Roi.Width}x{outcome.Roi.Height}）");
+            using var sample = Cv2.ImRead(Path.Combine(AppContext.BaseDirectory, "Models", "selftest", "roi.png"));
+            var result = _recognizer!.RecognizeAsync(sample, CancellationToken.None).GetAwaiter().GetResult();
+            if (!result.Success || result.Coordinate is not { } c
+                || Math.Abs(c.X - 107.66) > .005 || Math.Abs(c.Y - 114.54) > .005)
+                throw new InvalidOperationException($"实机样本识别失败：{result.Error} {result.Coordinate}");
+            Console.WriteLine($"       实机样本：{result.Coordinate}，无需截取桌面");
         });
 
         Console.WriteLine(new string('-', 60));
@@ -240,12 +241,16 @@ public partial class App : Application
             SetupLogging();
             _settings = new SettingsStore().Load();
 
-            const int width = 880;
-            const int height = 690;
+            var small = args.Contains("--compact");
+            var width = small ? 920 : 1040;
+            var height = small ? 680 : 760;
 
-            var window = new SettingsWindow(_settings, () => { }, TestCaptureAsync);
+            var window = new SettingsWindow(_settings, () => Task.CompletedTask, TestCaptureAsync);
             window.Width = width;
             window.Height = height;
+            if (args.Contains("--expanded"))
+                foreach (var expander in LogicalDescendants(window).OfType<System.Windows.Controls.Expander>())
+                    expander.IsExpanded = true;
 
             if (window.Content is not System.Windows.Controls.Panel root)
             {
@@ -368,6 +373,15 @@ public partial class App : Application
         }
     }
 
+    private static IEnumerable<DependencyObject> LogicalDescendants(DependencyObject parent)
+    {
+        foreach (var child in LogicalTreeHelper.GetChildren(parent).OfType<DependencyObject>())
+        {
+            yield return child;
+            foreach (var nested in LogicalDescendants(child)) yield return nested;
+        }
+    }
+
     private void SetupLogging()
     {
         _logProvider = new FileLoggerProvider();
@@ -407,10 +421,11 @@ public partial class App : Application
         var preprocessors = PreprocessorFactory.ResolveCandidates(_settings.Ocr.Preprocessor);
 
         _debugWriter = new DebugArtifactWriter();
-        _debugObserver = new DebugSessionObserver(
+        _debugObserver = new CaptureDiagnostics(
             _debugWriter, () => _settings.Debug, message => _logger?.LogWarning("{Message}", message));
 
         var recognizer = new CoordinateRecognizer(engines, preprocessors, parser, validator, _debugObserver);
+        _recognizer = recognizer;
 
         _captureService = new MortarCaptureService(
             new GdiScreenCaptureProvider(),
@@ -533,6 +548,7 @@ public partial class App : Application
         // 输入监听失效时是「什么都不发生」，没有日志就无从判断。
         manager.Log = message => _logger?.LogInformation("[输入] {Message}", message);
         manager.HotkeyPressed += OnHotkeyPressed;
+        manager.UserActivity += (_, _) => _operations.CancelOnActivity();
         return manager;
     }
 
@@ -574,224 +590,96 @@ public partial class App : Application
 
     // ------------------------------------------------------------ 采集
 
-    /// <summary>
-    /// 采集一次并把结果写进 session。
-    /// </summary>
-    /// <remarks>
-    /// 这是「跑一次」，不重试。重试逻辑在上层的 <see cref="CaptureAsync"/>。
-    /// </remarks>
-    private async Task<CaptureOutcome?> CaptureOnceAsync(bool isGun)
+    private Task CaptureAsync(bool isGun) => RunCaptureAsync(isGun, automatic: false);
+
+    private Task AutoCalibrateGunAsync() => RunCaptureAsync(isGun: true, automatic: true);
+
+    private async Task RunCaptureAsync(bool isGun, bool automatic)
     {
-        if (_captureService is null || _session is null || _hud is null)
+        var foreground = CaptureContext.Foreground;
+        if (automatic && !CaptureContext.IsExternal(foreground)) return;
+        CaptureContext.TryGetCursor(out var initialCursor);
+        await _operations.RunAsync(async token =>
         {
-            return null;
-        }
-
-        try
-        {
-            var outcome = await _captureService.CaptureAsync();
-
-            if (!outcome.Success || outcome.Coordinate is null)
+            try
             {
-                var status = MapFailureStatus(outcome.Recognition.Error);
-                _session.ReportFailure(status, outcome.Recognition.Error);
-
-                // 日志里必须留下「光标在哪、ROI 框了哪、每条流水线读到了什么」，
-                // 否则事后只有一句 X_NOT_FOUND，根本无从判断是 ROI 没框住还是解析太严。
-                _logger?.LogWarning(
-                    "采集失败（{Kind}）：{Error}；光标=({CursorX},{CursorY}) ROI=({RoiX},{RoiY},{RoiW},{RoiH})；明细：{Attempts}",
-                    isGun ? "炮位" : "目标",
-                    outcome.Recognition.Error,
-                    outcome.Cursor.X, outcome.Cursor.Y,
-                    outcome.Roi.X, outcome.Roi.Y, outcome.Roi.Width, outcome.Roi.Height,
-                    CoordinateRecognizer.DescribeAttempts(outcome.Recognition.Attempts));
-
-                _debugObserver?.WriteResult(outcome, isGun);
-
-                // TDD §16：失败时目标保持不变，且必须让用户看到「目标没变」。
-                _hud.NotifyStatusChanged();
-                UpdateDebugOverlay(outcome);
-                return null;
-            }
-
-            var coordinate = outcome.Coordinate.Value;
-
-            if (isGun)
-            {
-                _session.LockGun(coordinate);
-                _logger?.LogInformation("炮位已锁定：{X:0.00} / {Y:0.00}（置信度 {Confidence:0.00}）",
-                    coordinate.X, coordinate.Y, outcome.Recognition.Confidence);
-            }
-            else if (!_session.LockTarget(coordinate))
-            {
-                // TDD §37：没有炮位就不许计算。
-                _logger?.LogWarning("没有炮位，忽略目标记录");
-            }
-            else
-            {
-                var solution = _session.Solution;
-                _logger?.LogInformation(
-                    "目标已锁定：{X:0.00} / {Y:0.00}；Δ=({Dx:0.00},{Dy:0.00}) RNG={Range:0.0}m AZ={Bearing:0.0}°",
-                    coordinate.X, coordinate.Y, solution.DeltaX, solution.DeltaY,
-                    solution.RangeMeters, solution.BearingDegrees);
-            }
-
-            _debugObserver?.WriteResult(outcome, isGun);
-            _hud.NotifyStatusChanged();
-            UpdateDebugOverlay(outcome);
-            return outcome;
-        }
-        catch (Exception ex)
-        {
-            _logger?.LogError(ex, "采集过程发生未预期错误");
-            _session.ReportFailure(MortarStatusKind.CaptureFailed, ex.Message);
-            _hud.NotifyStatusChanged();
-            return null;
-        }
-    }
-
-    /// <summary>
-    /// 采集并按需重试。
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// 同一个坐标反复按、却偶尔读不出来，实测是常态：读数就处在二值化的临界点上，
-    /// 光标差一个像素、抗锯齿变一点，阈值一切就翻。这不是遮挡问题，重试就能解决——
-    /// 下一帧往往是好的。
-    /// </para>
-    /// <para>
-    /// 重试是安全的：失败路径<strong>不会</strong>改动已保存的炮位或目标，
-    /// 所以多试几次最坏情况也只是多花几百毫秒。
-    /// </para>
-    /// </remarks>
-    private async Task CaptureAsync(bool isGun)
-    {
-        CancelPendingAutoCalibrate();
-
-        for (var attempt = 1; attempt <= CaptureAttempts; attempt++)
-        {
-            if (attempt > 1)
-            {
-                // 隔一帧再试。太长会让用户觉得迟钝，太短可能落在同一帧上。
-                await Task.Delay(TimeSpan.FromMilliseconds(120));
-            }
-
-            var outcome = await CaptureOnceAsync(isGun);
-
-            if (outcome is { Success: true })
-            {
-                if (attempt > 1)
+                if (_captureService is null || _session is null || _hud is null) return;
+                if (!isGun && _session.Gun is null)
                 {
-                    _logger?.LogInformation("{Kind} 第 {Attempt} 次尝试成功", isGun ? "炮位" : "目标", attempt);
+                    _operations.TryCommit(token, () =>
+                    {
+                        _session.ReportFailure(MortarStatusKind.NoGunPosition, "NO_GUN_POSITION");
+                        _hud.NotifyStatusChanged();
+                    });
+                    return;
                 }
-
-                return;
+                if (automatic)
+                {
+                    await Task.Delay(Math.Clamp(_settings.Hotkeys.AutoCalibrateDelayMs, 0, 3000), token);
+                    if (!CaptureContext.TryGetCursor(out initialCursor)
+                        || !CaptureContext.IsClientCenter(foreground, initialCursor))
+                    {
+                        _logger?.LogInformation("自动校准跳过：光标尚未归位到前台窗口中心，请手动记录炮位");
+                        return;
+                    }
+                }
+                var attempts = automatic ? 2 : 3;
+                for (var attempt = 0; attempt < attempts; attempt++)
+                {
+                    if (attempt > 0) await Task.Delay(automatic ? 150 : 120, token);
+                    token.ThrowIfCancellationRequested();
+                    if (!ContextUnchanged()) return;
+                    _debugObserver?.BeginRequest();
+                    var outcome = await _captureService.CaptureAsync(token);
+                    token.ThrowIfCancellationRequested();
+                    if (!ContextUnchanged()) return;
+                    if (outcome.Recognition.Error == "BUSY") return;
+                    outcome = _debugObserver?.AttachImages(outcome) ?? outcome;
+                    _debugObserver?.WriteResult(outcome, isGun);
+                    _logger?.LogInformation("采集 {Kind} 第 {Attempt} 次：{Details}",
+                        isGun ? "炮位" : "目标", attempt + 1,
+                        CoordinateRecognizer.DescribeAttempts(outcome.Recognition.Attempts));
+                    if (outcome.Success || attempt == attempts - 1)
+                    {
+                        _operations.TryCommit(token, () => ApplyCapture(outcome, isGun));
+                        return;
+                    }
+                }
             }
-
-            if (attempt < CaptureAttempts)
+            catch (OperationCanceledException) { throw; }
+            catch (Exception ex)
             {
-                _logger?.LogInformation("{Kind} 第 {Attempt} 次未读到坐标（{Error}），重试",
-                    isGun ? "炮位" : "目标", attempt, outcome?.Recognition.Error);
+                _logger?.LogError(ex, "采集失败");
+                _operations.TryCommit(token, () =>
+                {
+                    _session?.ReportFailure(MortarStatusKind.CaptureFailed, ex.Message);
+                    _hud?.NotifyStatusChanged();
+                });
             }
-        }
+        });
+
+        bool ContextUnchanged() => CaptureContext.Foreground == foreground
+            && CaptureContext.TryGetCursor(out var cursor) && cursor == initialCursor;
     }
 
-    private const int CaptureAttempts = 3;
-
-    /// <summary>
-    /// 按下地图键后自动校准炮位。
-    /// </summary>
-    /// <remarks>
-    /// 游戏按 M 打开地图时，鼠标会复位到地图中心，也就是自己的位置——
-    /// 所以「打开地图」这一刻的光标位置就是炮位，可以顺势自动记录，
-    /// 省掉一次「把鼠标移到自己身上再按 F6」。
-    ///
-    /// 必须等一小会儿：地图有打开动画，光标也不是瞬间归位的，
-    /// 截早了会拿到复位之前的画面。
-    ///
-    /// 误触也不怕：光标附近没有坐标读数时 OCR 会失败，
-    /// 而失败路径不会改动已保存的炮位（见 <see cref="MortarSession.ReportFailure"/>）。
-    /// </remarks>
-    private async Task AutoCalibrateGunAsync()
+    private void ApplyCapture(CaptureOutcome outcome, bool isGun)
     {
-        var delay = Math.Clamp(_settings.Hotkeys.AutoCalibrateDelayMs, 0, 3000);
-
-        // 每次按地图键都重新起一轮，旧的那轮立刻作废。
-        CancelPendingAutoCalibrate();
-        var cancellation = new CancellationTokenSource();
-        _pendingAutoCalibrate = cancellation;
-
-        try
+        if (_session is null || _hud is null) return;
+        if (outcome.Success && outcome.Coordinate is { } coordinate)
         {
-            await Task.Delay(delay, cancellation.Token);
-
-            var outcome = await CaptureOnceAsync(isGun: true);
-
-            if (outcome is { Success: true, Coordinate: not null })
-            {
-                _logger?.LogInformation("自动校准成功：{X:0.00} / {Y:0.00}",
-                    outcome.Coordinate.Value.X, outcome.Coordinate.Value.Y);
-                return;
-            }
-
-            // 只再补一次。窗口拉长是有害的：
-            // 用户按下 M 之后很快就会关掉地图、移动鼠标，
-            // 拖得太久的话，某一次迟到的重试会在错误的时刻「成功」，
-            // 锁定一个完全不相干的炮位——这比读不到更糟。
-            await Task.Delay(150, cancellation.Token);
-
-            var retry = await CaptureOnceAsync(isGun: true);
-
-            if (retry is { Success: true, Coordinate: not null })
-            {
-                _logger?.LogInformation("自动校准成功（重试）：{X:0.00} / {Y:0.00}",
-                    retry.Coordinate.Value.X, retry.Coordinate.Value.Y);
-                return;
-            }
-
-            _logger?.LogWarning("自动校准未读到坐标，炮位保持不变");
+            if (isGun) _session.LockGun(coordinate);
+            else _session.LockTarget(coordinate);
+            _logger?.LogInformation("{Kind}已锁定：{X:0.00} / {Y:0.00}",
+                isGun ? "炮位" : "目标", coordinate.X, coordinate.Y);
         }
-        catch (OperationCanceledException)
+        else
         {
-            _logger?.LogInformation("自动校准已被后续操作取消");
+            _session.ReportFailure(MapFailureStatus(outcome.Recognition.Error), outcome.Recognition.Error);
+            _logger?.LogWarning("采集失败：{Error}；光标={Cursor} ROI={Roi}",
+                outcome.Recognition.Error, outcome.Cursor, outcome.Roi);
         }
-        finally
-        {
-            if (ReferenceEquals(_pendingAutoCalibrate, cancellation))
-            {
-                _pendingAutoCalibrate = null;
-            }
-
-            cancellation.Dispose();
-        }
-    }
-
-    /// <summary>
-    /// 取消挂起的自动校准。
-    /// </summary>
-    /// <remarks>
-    /// 用户一旦按了别的键（记录目标、记录炮位……），说明他已经不在「刚打开地图」那个瞬间了，
-    /// 这时候继续校准只会在错误的位置上锁定炮位。
-    /// </remarks>
-    private void CancelPendingAutoCalibrate()
-    {
-        var pending = _pendingAutoCalibrate;
-
-        if (pending is null)
-        {
-            return;
-        }
-
-        _pendingAutoCalibrate = null;
-
-        try
-        {
-            pending.Cancel();
-        }
-        catch (ObjectDisposedException)
-        {
-            // 已经跑完并释放了，忽略。
-        }
+        _hud.NotifyStatusChanged();
+        UpdateDebugOverlay(outcome);
     }
 
     /// <summary>
@@ -803,12 +691,20 @@ public partial class App : Application
     /// </remarks>
     private async Task<CaptureOutcome> TestCaptureAsync()
     {
-        if (_captureService is null)
+        var result = CaptureOutcome.Failed("CANCELLED", TimeSpan.Zero);
+        await _operations.RunAsync(async token =>
         {
-            return CaptureOutcome.Failed("尚未初始化。", TimeSpan.Zero);
-        }
-
-        return await _captureService.CaptureAsync();
+            if (_captureService is null) return;
+            _debugObserver?.BeginRequest();
+            var captured = await _captureService.CaptureAsync(token);
+            token.ThrowIfCancellationRequested();
+            _operations.TryCommit(token, () =>
+            {
+                result = _debugObserver?.AttachImages(captured) ?? captured;
+                _debugObserver?.WriteResult(result, false);
+            });
+        });
+        return result;
     }
 
     /// <summary>
@@ -881,9 +777,10 @@ public partial class App : Application
 
     private void ShowSettings()
     {
+        _operations.Cancel();
         if (_settingsWindow is null)
         {
-            _settingsWindow = new SettingsWindow(_settings, ApplySettingsFromUi, TestCaptureAsync);
+            _settingsWindow = new SettingsWindow(_settings, ApplySettingsFromUi, TestCaptureAsync, count => _debugObserver?.CollectNext(count));
             _settingsWindow.Closed += (_, _) => _settingsWindow = null;
         }
 
@@ -900,6 +797,7 @@ public partial class App : Application
 
     private void ToggleHud()
     {
+        _operations.Cancel();
         _settings.Hud.Visible = !_settings.Hud.Visible;
         _hud?.ApplySettings(_settings.Hud);
         _debugOverlay?.ApplySettings(_settings.Hud, _settings.Debug);
@@ -910,6 +808,7 @@ public partial class App : Application
 
     private void ToggleDebug()
     {
+        _operations.Cancel();
         _settings.Debug.Enabled = !_settings.Debug.Enabled;
 
         if (!_settings.Debug.Enabled)
@@ -933,13 +832,17 @@ public partial class App : Application
     }
 
     /// <summary>设置页点了「应用」之后调用：重建受影响的链路并刷新 HUD。</summary>
-    private void ApplySettingsFromUi()
+    private Task ApplySettingsFromUi() => _operations.RunAsync(token =>
     {
         try
         {
             // OCR / 坐标范围 / 单位换算都可能改了，整条链路重建最稳妥。
+            var gun = _session?.Gun;
+            var target = _session?.Target;
             DisposeCoreServices();
             BuildCoreServices();
+            if (gun is { } g) _session!.LockGun(g);
+            if (target is { } t) _session!.LockTarget(t);
 
             // HudController 持有 session 引用。BuildCoreServices 换的是新 session，
             // 不重建它的话，HUD 会一直显示旧 session 的数据——
@@ -958,13 +861,10 @@ public partial class App : Application
         catch (Exception ex)
         {
             _logger?.LogError(ex, "应用设置失败");
-            MessageBox.Show(
-                $"应用设置失败：{ex.Message}\n\n程序会继续运行，但热键可能需要在设置里重新应用一次。",
-                "MortarHUD",
-                MessageBoxButton.OK,
-                MessageBoxImage.Error);
+            throw;
         }
-    }
+        return Task.CompletedTask;
+    }, cancelOnActivity: false, throwOnCancellation: true);
 
     private void PersistSettings()
     {
@@ -980,11 +880,16 @@ public partial class App : Application
 
     // ------------------------------------------------------------ 退出
 
-    private void ExitApplication() => Shutdown();
+    private async void ExitApplication()
+    {
+        await _operations.RunAsync(_ => { DisposeCoreServices(); return Task.CompletedTask; });
+        Shutdown();
+    }
 
     protected override void OnExit(ExitEventArgs e)
     {
-        // TDD §36：退出时按顺序注销热键、释放 Overlay、释放 OCR、冲刷日志。
+        _operations.Cancel();
+        // 退出前取消尚未提交的操作。
         try
         {
             PersistSettings();
@@ -1032,111 +937,4 @@ public partial class App : Application
         _debugObserver = null;
     }
 
-    /// <summary>
-    /// Debug 转储的实现：只在设置打开对应开关时才写盘（TDD §33）。
-    /// </summary>
-    private sealed class DebugSessionObserver : IRecognitionObserver
-    {
-        private readonly DebugArtifactWriter _writer;
-        private readonly Func<DebugSettings> _settingsAccessor;
-        private readonly Action<string> _log;
-
-        private string? _baseName;
-
-        public DebugSessionObserver(
-            DebugArtifactWriter writer, Func<DebugSettings> settingsAccessor, Action<string> log)
-        {
-            _writer = writer;
-            _settingsAccessor = settingsAccessor;
-            _log = log;
-        }
-
-        public void OnRawRoi(Mat rawRoi)
-        {
-            var settings = _settingsAccessor();
-            _baseName = DebugArtifactWriter.CreateBaseName(DateTime.Now);
-
-            if (!settings.Enabled || !settings.SaveRawRoi)
-            {
-                return;
-            }
-
-            TryWrite(_writer.ResolveRawPath(_baseName), rawRoi);
-        }
-
-        public void OnProcessed(string engine, string pipeline, Mat processed)
-        {
-            var settings = _settingsAccessor();
-
-            if (!settings.Enabled || !settings.SaveProcessedRoi)
-            {
-                return;
-            }
-
-            var name = _baseName ??= DebugArtifactWriter.CreateBaseName(DateTime.Now);
-            var path = Path.Combine(
-                _writer.Directory, $"{name}_{engine}_{pipeline}_processed.png");
-
-            TryWrite(path, processed);
-        }
-
-        /// <summary>把这次采集的完整结论写成 JSON，Debug 面板与事后排查都靠它。</summary>
-        public void WriteResult(CaptureOutcome outcome, bool isGun)
-        {
-            var settings = _settingsAccessor();
-            if (!settings.Enabled)
-            {
-                return;
-            }
-
-            var name = _baseName ??= DebugArtifactWriter.CreateBaseName(DateTime.Now);
-
-            var payload = new
-            {
-                timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"),
-                kind = isGun ? "gun" : "target",
-                cursor = new { x = outcome.Cursor.X, y = outcome.Cursor.Y },
-                roi = new { x = outcome.Roi.X, y = outcome.Roi.Y, w = outcome.Roi.Width, h = outcome.Roi.Height },
-                success = outcome.Success,
-                error = outcome.Recognition.Error,
-                coordinate = outcome.Coordinate is { } c ? new { x = c.X, y = c.Y } : null,
-                confidence = outcome.Recognition.Confidence,
-                captureMs = outcome.CaptureTime.TotalMilliseconds,
-                totalMs = outcome.TotalTime.TotalMilliseconds,
-                attempts = outcome.Recognition.Attempts.Select(a => new
-                {
-                    engine = a.Engine,
-                    pipeline = a.Pipeline,
-                    success = a.Success,
-                    error = a.Error,
-                    rawText = a.RawText,
-                    repairedText = a.RepairedText,
-                    confidence = a.Confidence,
-                    preprocessMs = a.PreprocessTime.TotalMilliseconds,
-                    ocrMs = a.OcrTime.TotalMilliseconds,
-                }),
-            };
-
-            try
-            {
-                _writer.WriteResult(name, payload);
-            }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-            {
-                _log($"写入 Debug 结果失败：{ex.Message}");
-            }
-        }
-
-        private static void TryWrite(string path, Mat image)
-        {
-            try
-            {
-                Cv2.ImWrite(path, image);
-            }
-            catch (Exception ex) when (ex is OpenCVException or IOException)
-            {
-                System.Diagnostics.Debug.WriteLine($"Debug 截图写入失败 {path}：{ex.Message}");
-            }
-        }
-    }
 }

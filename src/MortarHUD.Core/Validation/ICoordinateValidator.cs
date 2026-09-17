@@ -9,4 +9,5 @@ namespace MortarHUD.Core.Validation;
 public interface ICoordinateValidator
 {
     CoordinateValidationResult Validate(CoordinateOcrResult ocrResult);
+    CoordinateValidationResult ValidateCoordinates(CoordinateOcrResult ocrResult);
 }

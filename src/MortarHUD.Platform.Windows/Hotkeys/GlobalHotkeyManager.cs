@@ -49,6 +49,7 @@ public sealed class GlobalHotkeyManager : IGlobalHotkeyService
     private volatile Dictionary<(MouseButton Button, uint Modifiers), HotkeyAction> _mouseBindings = [];
 
     private volatile Dictionary<uint, HotkeyAction> _observedKeys = [];
+    private readonly ObservedKeyState _keyState = new();
 
     /// <summary>必须保持强引用，否则委托被 GC 后窗口过程会指向野指针。</summary>
     private readonly Win32.WndProcDelegate _wndProcDelegate;
@@ -70,6 +71,7 @@ public sealed class GlobalHotkeyManager : IGlobalHotkeyService
     }
 
     public event EventHandler<HotkeyPressedEventArgs>? HotkeyPressed;
+    public event EventHandler? UserActivity;
 
     /// <summary>
     /// 诊断日志出口，App 会把它接到文件日志上。
@@ -142,6 +144,7 @@ public sealed class GlobalHotkeyManager : IGlobalHotkeyService
             lock (_sync)
             {
                 _observedKeys = [];
+                _keyState.Clear();
 
                 foreach (var (action, definition) in bindings)
                 {
@@ -281,6 +284,7 @@ public sealed class GlobalHotkeyManager : IGlobalHotkeyService
         _idToAction.Clear();
         _mouseBindings = [];
         _observedKeys = [];
+        _keyState.Clear();
         _actionToDefinition.Clear();
     }
 
@@ -359,40 +363,42 @@ public sealed class GlobalHotkeyManager : IGlobalHotkeyService
         var offset = Marshal.SizeOf<RawInput.RAWINPUTHEADER>();
         var flags = RawInput.ReadUInt16(buffer, offset + RawInput.MouseButtonFlagsOffset);
 
-        var button = flags switch
-        {
-            RawInput.RI_MOUSE_LEFT_BUTTON_DOWN => MouseButton.Left,
-            RawInput.RI_MOUSE_RIGHT_BUTTON_DOWN => MouseButton.Right,
-            RawInput.RI_MOUSE_MIDDLE_BUTTON_DOWN => MouseButton.Middle,
-            RawInput.RI_MOUSE_BUTTON_4_DOWN => MouseButton.X1,
-            RawInput.RI_MOUSE_BUTTON_5_DOWN => MouseButton.X2,
-            _ => (MouseButton)0,
-        };
-
-        if (button == (MouseButton)0)
-        {
-            return;
-        }
+        // 只观察设备活动，不拦截输入；移动或滚轮使尚未提交的采集作废。
+        if ((flags & 0x0D55) != 0 || Marshal.ReadInt32(buffer, offset + 12) != 0
+            || Marshal.ReadInt32(buffer, offset + 16) != 0)
+            UserActivity?.Invoke(this, EventArgs.Empty);
 
         var modifiers = ReadModifierState();
-
-        if (_mouseBindings.TryGetValue((button, modifiers), out var action))
+        // Flags 是位掩码：同时按键/滚轮不能让合法的按下事件消失。
+        foreach (var (mask, button) in new[]
         {
-            RaiseHotkey(action);
+            (RawInput.RI_MOUSE_LEFT_BUTTON_DOWN, MouseButton.Left),
+            (RawInput.RI_MOUSE_RIGHT_BUTTON_DOWN, MouseButton.Right),
+            (RawInput.RI_MOUSE_MIDDLE_BUTTON_DOWN, MouseButton.Middle),
+            (RawInput.RI_MOUSE_BUTTON_4_DOWN, MouseButton.X1),
+            (RawInput.RI_MOUSE_BUTTON_5_DOWN, MouseButton.X2),
+        })
+        {
+            if ((flags & mask) != 0 && _mouseBindings.TryGetValue((button, modifiers), out var action))
+                RaiseHotkey(action);
         }
     }
 
     private void HandleRawKeyboard(IntPtr buffer)
     {
-        if (_observedKeys.Count == 0)
-        {
-            return;
-        }
-
         var offset = Marshal.SizeOf<RawInput.RAWINPUTHEADER>();
         var virtualKey = RawInput.ReadUInt16(buffer, offset + RawInput.KeyboardVKeyOffset);
+        var flags = RawInput.ReadUInt16(buffer, offset + 2);
+        var header = Marshal.PtrToStructure<RawInput.RAWINPUTHEADER>(buffer);
+        if (!_keyState.Press(header.hDevice, virtualKey, flags)) return;
 
-        if (_observedKeys.TryGetValue(virtualKey, out var action))
+        // 同一个按下还会到 WM_HOTKEY，不能在两个通道里重复取消新发起的采集。
+        var modifiers = ReadModifierState();
+        var registered = _idToAction.Values.Any(a => _actionToDefinition.TryGetValue(a, out var definition)
+            && definition.VirtualKey == virtualKey && definition.Modifiers == modifiers);
+        if (!registered) UserActivity?.Invoke(this, EventArgs.Empty);
+
+        if (modifiers == 0 && _observedKeys.TryGetValue(virtualKey, out var action))
         {
             RaiseHotkey(action);
         }
@@ -507,7 +513,8 @@ public sealed class GlobalHotkeyManager : IGlobalHotkeyService
         {
             case RawInput.WM_INPUT:
                 HandleRawInput(lParam);
-                return IntPtr.Zero;
+                // 前台 WM_INPUT 需要交给 DefWindowProc 清理系统的输入缓冲。
+                return Win32.DefWindowProc(hWnd, msg, wParam, lParam);
 
             case WmRaiseHotkey:
             {

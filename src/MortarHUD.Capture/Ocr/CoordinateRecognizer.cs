@@ -78,7 +78,16 @@ public sealed class CoordinateRecognizer
         }
 
         totalWatch.Stop();
-        return Aggregate(attempts, totalWatch.Elapsed);
+        cancellationToken.ThrowIfCancellationRequested();
+        var outcome = Aggregate(attempts, totalWatch.Elapsed);
+        if (!outcome.Success || outcome.Coordinate is not { } coordinate) return outcome;
+        var validation = _validator.Validate(new CoordinateOcrResult
+        {
+            Success = true, X = coordinate.X, Y = coordinate.Y,
+            Confidence = outcome.Confidence, RawText = outcome.RawText,
+        });
+        return validation.IsValid ? outcome : outcome with
+        { Success = false, Coordinate = null, Error = validation.Error };
     }
 
     private async Task<RecognitionAttempt> RunOneAsync(
@@ -136,7 +145,7 @@ public sealed class CoordinateRecognizer
                     return attempt with { Error = parseResult.Error ?? "PARSE_FAILED" };
                 }
 
-                var validation = _validator.Validate(ocrResult with
+                var validation = _validator.ValidateCoordinates(ocrResult with
                 {
                     Success = true,
                     X = parseResult.X,
@@ -168,7 +177,7 @@ public sealed class CoordinateRecognizer
     }
 
     /// <summary>
-    /// 汇总全部尝试。规则：多数一致则采纳；出现不可调和的矛盾则整体判失败。
+    /// 汇总全部尝试。所有有效坐标必须一致，置信度门槛在汇总后检查。
     /// </summary>
     private static RecognitionOutcome Aggregate(List<RecognitionAttempt> attempts, TimeSpan totalTime)
     {
@@ -183,9 +192,8 @@ public sealed class CoordinateRecognizer
 
         var best = groups.OrderByDescending(g => g.Count).First();
 
-        // 并列第一 = 没有任何一个答案得到多数支持，无法判断谁对。
-        var tied = groups.Count(g => g.Count == best.Count) > 1;
-        if (tied)
+        // 有冲突就拒绝，不能让新增的相似流水线用票数掩盖另一条的不同读数。
+        if (groups.Count > 1)
         {
             return RecognitionOutcome.Failed("PIPELINE_DISAGREEMENT", attempts, totalTime);
         }

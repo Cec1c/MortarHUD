@@ -14,6 +14,15 @@ public sealed class CoordinateValidator : ICoordinateValidator
 
     public CoordinateValidationResult Validate(CoordinateOcrResult ocrResult)
     {
+        var coordinate = ValidateCoordinates(ocrResult);
+        if (!coordinate.IsValid) return coordinate;
+        return !double.IsFinite(ocrResult.Confidence) || ocrResult.Confidence < _options.MinimumConfidence
+            ? CoordinateValidationResult.Invalid("LOW_CONFIDENCE")
+            : coordinate;
+    }
+
+    public CoordinateValidationResult ValidateCoordinates(CoordinateOcrResult ocrResult)
+    {
         if (ocrResult is null)
         {
             return CoordinateValidationResult.Invalid("NULL_RESULT");
@@ -43,11 +52,6 @@ public sealed class CoordinateValidator : ICoordinateValidator
         if (!double.IsFinite(ocrResult.X.Value) || !double.IsFinite(ocrResult.Y.Value))
         {
             return CoordinateValidationResult.Invalid("NON_FINITE_COORDINATE");
-        }
-
-        if (ocrResult.Confidence < _options.MinimumConfidence)
-        {
-            return CoordinateValidationResult.Invalid("LOW_CONFIDENCE");
         }
 
         var x = ocrResult.X.Value;
