@@ -1,0 +1,13 @@
+# 构建产物
+bin/
+obj/
+dist/
+
+# 开发期的临时分析目录（截图转储、预处理结果等）
+_analysis/
+
+# Visual Studio / Rider
+.vs/
+.idea/
+*.user
+*.suo

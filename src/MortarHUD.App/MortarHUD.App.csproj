@@ -1,0 +1,120 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <RootNamespace>MortarHUD.App</RootNamespace>
+    <AssemblyName>MortarHUD</AssemblyName>
+    <UseWPF>true</UseWPF>
+
+    <!-- 托盘用 WinForms 的 NotifyIcon：它是框架自带的，比再拉一个托盘库省事。 -->
+    <UseWindowsForms>true</UseWindowsForms>
+
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+
+    <!--
+      只保留中文（和英文兜底）的卫星资源程序集。
+      不限制的话，.NET 会为每个本地化语言复制一整份框架资源 DLL，
+      实测光这一项就有 15 MB 左右，而这个工具只用中文界面。
+    -->
+    <SatelliteResourceLanguages>zh-Hans;en</SatelliteResourceLanguages>
+
+    <!--
+      WFO0003 建议把 DPI 声明从清单里挪到 Application.SetHighDpiMode。
+      那是 WinForms 应用的写法；本项目是 WPF，且必须在进程启动前就生效，
+      否则 GetCursorPos 会返回被虚拟化过的坐标，与截图对不上（见 app.manifest 的说明）。
+      这里只用到 WinForms 的托盘图标，因此忽略该建议。
+    -->
+    <NoWarn>$(NoWarn);WFO0003</NoWarn>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <!--
+    同时开 UseWPF 和 UseWindowsForms 会让两套框架的隐式 using 撞车
+    （Application / Window / Brush / Size / Color 全都二义）。
+    这里只去掉 WinForms 的「隐式」using，程序集引用保持不变——
+    真正用到 WinForms 的 TrayIcon.cs 自己显式 using 就好。
+  -->
+  <ItemGroup>
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MortarHUD.Core\MortarHUD.Core.csproj" />
+    <ProjectReference Include="..\MortarHUD.Capture\MortarHUD.Capture.csproj" />
+    <ProjectReference Include="..\MortarHUD.Platform.Windows\MortarHUD.Platform.Windows.csproj" />
+  </ItemGroup>
+
+  <!--
+    OCR 资源随程序发布（TDD §45）：用户不需要装 Python、Tesseract CLI 或任何额外运行时。
+    Models/tessdata 是语言包，Models/glyphs 是模板引擎的字形库。
+  -->
+  <ItemGroup>
+    <Content Include="Models\**\*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!--
+    ============================================================
+    发布后瘦身。
+
+    这些都是随 NuGet 包一起进来的、本项目用不到的东西：
+
+      x86/ (5.5 MB)
+          Tesseract 的 32 位原生库。程序是 x64 专用的。
+
+    注意：这里只删 deps.json 里**没有**列过的文件。
+    宿主会逐个校验依赖清单，少一个就直接拒绝启动——
+    DiaSymReader、createdump.exe、opencv_videoio_ffmpeg 都是这么踩出来的。
+    换句话说，想删什么之前先去 MortarHUD.deps.json 里搜一下名字。
+    整理脚本会在发布末尾做一次全量核对，漏了会当场警告。
+    ============================================================
+  -->
+  <Target Name="TrimPublishOutput" AfterTargets="Publish" BeforeTargets="OrganizePublishOutput">
+    <ItemGroup>
+      <PublishJunk Include="$(PublishDir)x86\**\*" />
+      <PublishJunk Include="$(PublishDir)*.pdb" />
+    </ItemGroup>
+
+    <Delete Files="@(PublishJunk)" ContinueOnError="true" />
+    <RemoveDir Directories="$(PublishDir)x86" ContinueOnError="true" />
+
+    <Message Importance="high"
+             Text="已清理发布目录中未使用的文件（ffmpeg 插件 / x86 原生库 / 符号读取器）" />
+  </Target>
+
+  <!--
+    ============================================================
+    整理发布目录：把托管程序集收进 libs\，外面只留入口和运行必需品。
+
+    原理是 runtimeconfig.json 的 additionalProbingPaths：
+    .NET 加载托管程序集时会额外在这些目录里找，所以它们可以整体挪走。
+    但下面这些必须留在 exe 旁边，挪了就起不来：
+
+      hostfxr / hostpolicy / coreclr / clrjit / clrgc / clretwrc / clrgcexp
+          .NET 宿主与运行时本体，在读到 runtimeconfig.json 之前就要加载。
+      System.Private.CoreLib
+          基础类库，加载时机比探测路径生效还早。
+      wpfgfx_cor3 / PresentationNative_cor3 / D3DCompiler_47_cor3 / vcruntime140_cor3
+          WPF 的原生渲染层，按固定名字在程序目录里找。
+      OpenCvSharpExtern
+          OpenCvSharp 用它自己的解析逻辑按程序目录找。
+      x64\ / zh-Hans\ / Models          Tesseract 原生库、中文资源、OCR 模型，都已经是子目录。
+    ============================================================
+  -->
+  <Target Name="OrganizePublishOutput" AfterTargets="Publish"
+          Condition="'$(PublishSingleFile)' != 'true'">
+    <!--
+      交给 PowerShell 做：它自带 ConvertFrom-Json，而 MSBuild 的内联任务
+      拿不到 System.Text.Json 的引用。脚本见 tools\organize-publish.ps1。
+    -->
+    <Exec Command="pwsh -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildThisFileDirectory)..\..\tools\organize-publish.ps1&quot; -PublishDirectory &quot;$(PublishDir).&quot; -EntryAssembly &quot;$(AssemblyName).dll&quot;"
+          ContinueOnError="true" />
+  </Target>
+
+</Project>

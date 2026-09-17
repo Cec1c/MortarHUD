@@ -1,0 +1,25 @@
+<Window x:Class="MortarHUD.App.Views.OverlayWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:views="clr-namespace:MortarHUD.App.Views"
+        Title="MortarHUD 准星"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ShowInTaskbar="False"
+        Topmost="True"
+        ResizeMode="NoResize"
+        Focusable="False"
+        ShowActivated="False"
+        SizeToContent="WidthAndHeight"
+        WindowStartupLocation="Manual"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True">
+
+    <!--
+        HUD 本体只有一个自绘元素（见 HudRenderer）。
+        窗口自身不带任何边框、背景或标题栏，视觉上完全贴着游戏。
+    -->
+    <views:HudRenderer x:Name="Renderer" Margin="0" />
+
+</Window>

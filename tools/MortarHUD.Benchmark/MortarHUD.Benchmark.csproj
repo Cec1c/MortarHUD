@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    OCR Benchmark 控制台工具（TDD §17）。
+    正式选定 OCR 引擎之前必须先跑它，而不是凭感觉挑一个。
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <RootNamespace>MortarHUD.Benchmark</RootNamespace>
+    <AssemblyName>MortarHUD.Benchmark</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\MortarHUD.Core\MortarHUD.Core.csproj" />
+    <ProjectReference Include="..\..\src\MortarHUD.Capture\MortarHUD.Capture.csproj" />
+  </ItemGroup>
+
+  <!--
+    OCR 资源（tessdata 语言包、字形模板库）随程序发布（TDD §45），
+    Benchmark 也必须用同一份，否则量到的不是线上行为。
+  -->
+  <ItemGroup>
+    <None Include="..\..\src\MortarHUD.App\Models\**\*"
+          Link="Models\%(RecursiveDir)%(Filename)%(Extension)"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

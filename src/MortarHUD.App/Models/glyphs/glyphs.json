@@ -1,0 +1,134 @@
+[
+  {
+    "label": "x",
+    "pipeline": "A"
+  },
+  {
+    "label": "x",
+    "pipeline": "B"
+  },
+  {
+    "label": "x",
+    "pipeline": "C"
+  },
+  {
+    "label": "y",
+    "pipeline": "A"
+  },
+  {
+    "label": "y",
+    "pipeline": "B"
+  },
+  {
+    "label": "y",
+    "pipeline": "C"
+  },
+  {
+    "label": ".",
+    "pipeline": "A"
+  },
+  {
+    "label": ".",
+    "pipeline": "B"
+  },
+  {
+    "label": ".",
+    "pipeline": "C"
+  },
+  {
+    "label": "0",
+    "pipeline": "A"
+  },
+  {
+    "label": "0",
+    "pipeline": "B"
+  },
+  {
+    "label": "0",
+    "pipeline": "C"
+  },
+  {
+    "label": "1",
+    "pipeline": "A"
+  },
+  {
+    "label": "1",
+    "pipeline": "B"
+  },
+  {
+    "label": "1",
+    "pipeline": "C"
+  },
+  {
+    "label": "4",
+    "pipeline": "A"
+  },
+  {
+    "label": "4",
+    "pipeline": "B"
+  },
+  {
+    "label": "4",
+    "pipeline": "C"
+  },
+  {
+    "label": "5",
+    "pipeline": "A"
+  },
+  {
+    "label": "5",
+    "pipeline": "B"
+  },
+  {
+    "label": "5",
+    "pipeline": "C"
+  },
+  {
+    "label": "6",
+    "pipeline": "A"
+  },
+  {
+    "label": "6",
+    "pipeline": "B"
+  },
+  {
+    "label": "6",
+    "pipeline": "C"
+  },
+  {
+    "label": "7",
+    "pipeline": "A"
+  },
+  {
+    "label": "7",
+    "pipeline": "B"
+  },
+  {
+    "label": "7",
+    "pipeline": "C"
+  },
+  {
+    "label": "8",
+    "pipeline": "A"
+  },
+  {
+    "label": "8",
+    "pipeline": "B"
+  },
+  {
+    "label": "8",
+    "pipeline": "C"
+  },
+  {
+    "label": "9",
+    "pipeline": "A"
+  },
+  {
+    "label": "9",
+    "pipeline": "B"
+  },
+  {
+    "label": "9",
+    "pipeline": "C"
+  }
+]

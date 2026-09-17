@@ -1,0 +1,74 @@
+{
+  "referenceResolution": {
+    "width": 1920,
+    "height": 1080
+  },
+  "roiDefaults": {
+    "offsetX": -15,
+    "offsetY": -90,
+    "width": 150,
+    "height": 140
+  },
+  "fixtures": [
+    {
+      "id": "001",
+      "screenshot": "20260916202246_1.jpg",
+      "expectedX": 98.09,
+      "expectedY": 109.78,
+      "cursorX": 947,
+      "cursorY": 526,
+      "roiX": 932,
+      "roiY": 436,
+      "roiWidth": 150,
+      "roiHeight": 140,
+      "expectedText": "y109.78\nx98.09",
+      "labelBounds": {
+        "x": 963,
+        "y": 464,
+        "width": 75,
+        "height": 72
+      },
+      "labelLayoutNote": "y 行在上、x 行在下，x 行相对 y 行偏移 (+25,+55)（实测于 1920x1080）"
+    },
+    {
+      "id": "002",
+      "screenshot": "20260916202250_1.jpg",
+      "expectedX": 99.58,
+      "expectedY": 110.07,
+      "cursorX": 1186,
+      "cursorY": 475,
+      "roiX": 1171,
+      "roiY": 385,
+      "roiWidth": 150,
+      "roiHeight": 140,
+      "expectedText": "y110.07\nx99.58",
+      "labelBounds": {
+        "x": 1206,
+        "y": 416,
+        "width": 75,
+        "height": 72
+      },
+      "labelLayoutNote": "y 行在上、x 行在下，x 行相对 y 行偏移 (+25,+55)（实测于 1920x1080）"
+    },
+    {
+      "id": "003",
+      "screenshot": "20260916202735_1.jpg",
+      "expectedX": 107.66,
+      "expectedY": 114.54,
+      "cursorX": 1108,
+      "cursorY": 510,
+      "roiX": 1093,
+      "roiY": 420,
+      "roiWidth": 150,
+      "roiHeight": 140,
+      "expectedText": "y114.54\nx107.66",
+      "labelBounds": {
+        "x": 1126,
+        "y": 449,
+        "width": 83,
+        "height": 72
+      },
+      "labelLayoutNote": "y 行在上、x 行在下，x 行相对 y 行偏移 (+25,+55)（实测于 1920x1080）"
+    }
+  ]
+}

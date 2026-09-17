@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Capture 层：屏幕捕获 → 预处理 → OCR。
+    按 TDD §7 的核心原则，这三步各自独立、可替换、可单独测试。
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <RootNamespace>MortarHUD.Capture</RootNamespace>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="OpenCvSharp4" Version="4.10.0.20240616" />
+    <PackageReference Include="OpenCvSharp4.runtime.win" Version="4.10.0.20240616" />
+    <PackageReference Include="Tesseract" Version="5.2.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MortarHUD.Core\MortarHUD.Core.csproj" />
+    <ProjectReference Include="..\MortarHUD.Platform.Windows\MortarHUD.Platform.Windows.csproj" />
+  </ItemGroup>
+
+</Project>

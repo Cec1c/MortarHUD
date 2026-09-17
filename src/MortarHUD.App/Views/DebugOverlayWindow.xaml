@@ -1,0 +1,25 @@
+<Window x:Class="MortarHUD.App.Views.DebugOverlayWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:views="clr-namespace:MortarHUD.App.Views"
+        Title="MortarHUD 调试面板"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ShowInTaskbar="False"
+        Topmost="True"
+        ResizeMode="NoResize"
+        Focusable="False"
+        ShowActivated="False"
+        SizeToContent="WidthAndHeight"
+        WindowStartupLocation="Manual"
+        UseLayoutRounding="True">
+
+    <!--
+        Debug Overlay 与正常 HUD 是两个窗口（TDD §34）。
+        分开的好处：排查时可以只留 Debug 面板，也可以让两者贴在不同的角落，
+        互不影响；切换 Debug 也不需要重绘主 HUD。
+    -->
+    <views:HudRenderer x:Name="Renderer" />
+
+</Window>
