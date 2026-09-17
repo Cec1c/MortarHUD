@@ -46,7 +46,7 @@
     <Setter Property="Template">
       <Setter.Value>
         <ControlTemplate TargetType="TabItem">
-          <Border x:Name="Chrome" Padding="16,14" Margin="10,4" CornerRadius="6" Background="Transparent" BorderThickness="2" BorderBrush="Transparent">
+          <Border x:Name="Chrome" Padding="10,14" Margin="0,0,0,3" CornerRadius="8" Background="Transparent" BorderThickness="0" BorderBrush="Transparent">
             <ContentPresenter ContentSource="Header" VerticalAlignment="Center" TextElement.Foreground="{TemplateBinding Foreground}"/>
           </Border>
           <ControlTemplate.Triggers>
@@ -55,10 +55,15 @@
               <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
             </Trigger>
             <Trigger Property="IsMouseOver" Value="True">
-              <Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+              <Setter TargetName="Chrome" Property="Background" Value="#0EFFFFFF"/>
+              <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
             </Trigger>
+            <!--
+                焦点只提亮文字，不画强调色边框：选中项本身就是一块圆角强调色块，
+                再套一圈同色描边会糊成一团。但指示必须保留 —— 键盘用户靠它定位光标。
+            -->
             <Trigger Property="IsKeyboardFocused" Value="True">
-              <Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+              <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
             </Trigger>
           </ControlTemplate.Triggers>
         </ControlTemplate>
@@ -70,7 +75,11 @@
       <Setter.Value>
         <ControlTemplate TargetType="TabControl">
           <DockPanel>
-            <Border DockPanel.Dock="Left" Width="140" Background="{StaticResource SurfaceBrush}" Padding="0,18,0,0" BorderThickness="0,0,1,0" BorderBrush="{StaticResource BorderBrush}">
+            <!--
+                导航栏与内容区之间刻意不画竖分隔线：两边的底色层次不同，
+                内容区又自带 26px 左内边距，再加一条线只是噪音。
+            -->
+            <Border DockPanel.Dock="Left" Width="168" Background="{StaticResource SurfaceBrush}" Padding="14,18,14,0">
               <TabPanel IsItemsHost="True" VerticalAlignment="Top"/>
             </Border>
             <Border Background="{StaticResource SurfaceBrush}" Padding="{TemplateBinding Padding}">
@@ -267,12 +276,16 @@
   </Style>
   <Style x:Key="SectionHeader" TargetType="TextBlock">
     <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
-    <Setter Property="FontSize" Value="14"/>
-    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="FontSize" Value="12"/>
+    <Setter Property="FontWeight" Value="Bold"/>
+    <!--
+        上边距保持 16 不动：这个样式既用在卡片内（撑开与卡片顶边的距离），
+        也用在页面级区块（隔开上一段说明文字）。归零会让页面级标题紧贴正文。
+    -->
     <Setter Property="Margin" Value="0,16,0,10"/>
   </Style>
   <Style x:Key="Hint" TargetType="TextBlock">
-    <Setter Property="Foreground" Value="{StaticResource MutedTextBrush}"/>
+    <Setter Property="Foreground" Value="{StaticResource SubtleTextBrush}"/>
     <Setter Property="FontSize" Value="12"/>
     <Setter Property="TextWrapping" Value="Wrap"/>
     <Setter Property="Margin" Value="0,2,0,0"/>
@@ -380,16 +393,16 @@
     <Setter Property="Padding" Value="0,4,6,4"/>
   </Style>
   <Style x:Key="PageTitle" TargetType="TextBlock">
-    <Setter Property="FontSize" Value="24"/>
+    <Setter Property="FontSize" Value="22"/>
     <Setter Property="FontWeight" Value="SemiBold"/>
     <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
-    <Setter Property="Margin" Value="0,6,0,10"/>
+    <Setter Property="Margin" Value="0,0,0,6"/>
   </Style>
   <Style x:Key="Card" TargetType="Border">
-    <Setter Property="Padding" Value="18"/>
-    <Setter Property="CornerRadius" Value="8"/>
+    <Setter Property="Padding" Value="22"/>
+    <Setter Property="CornerRadius" Value="12"/>
     <Setter Property="Background" Value="{StaticResource SurfaceCardBrush}"/>
-    <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+    <Setter Property="BorderBrush" Value="{StaticResource BorderSubtleBrush}"/>
     <Setter Property="BorderThickness" Value="1"/>
   </Style>
   <Style x:Key="PrimaryButton" TargetType="Button">
