@@ -6,6 +6,9 @@ dist/
 # 开发期的临时分析目录（截图转储、预处理结果等）
 _analysis/
 
+# 设计阶段的可视化头脑风暴会话
+.superpowers/
+
 # Visual Studio / Rider
 .vs/
 .idea/
