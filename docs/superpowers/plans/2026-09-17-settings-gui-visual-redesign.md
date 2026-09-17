@@ -196,7 +196,7 @@ git commit -m "style: 设置窗口改为四层表面 + 三级半透明边框的�
 把第 9–20 行整块替换为：
 
 ```xml
-    <Border DockPanel.Dock="Top" Padding="26,16" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="0,0,0,1">
+    <Border DockPanel.Dock="Top" Background="{StaticResource SurfaceRaisedBrush}" Padding="26,16" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="0,0,0,1">
       <StackPanel Orientation="Horizontal">
         <Image Source="/Assets/MortarHUD.png" Width="22" Height="22" Margin="0,0,10,0"/>
         <StackPanel VerticalAlignment="Center">
@@ -209,6 +209,10 @@ git commit -m "style: 设置窗口改为四层表面 + 三级半透明边框的�
 
 删掉的是右上角的「离线坐标辅助」：它在设置窗口里没有信息量，而且是用 `HorizontalAlignment` 顶到最右边，
 是右侧留白失衡的来源之一。同时标题从 20px 收到 12px、图标 32→22px，整条栏从约 92px 降到约 64px。
+
+补上 `Background="{StaticResource SurfaceRaisedBrush}"` 是必要的：顶栏原本没有背景，
+而 Task 1 已经给底栏设了 `SurfaceRaisedBrush`，不补的话两条栏不对称，
+`SettingsTheme.xaml` 里注释承诺的「顶底栏同层」也就落空了。
 
 - [ ] **Step 2: 底部栏对齐到同一栅格**
 
