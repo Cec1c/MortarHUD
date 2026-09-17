@@ -4,268 +4,273 @@
 
 # MortarHUD
 
-**《Wardogs》迫击炮坐标解算外置 HUD**
+**An external HUD that solves mortar coordinates for *Wardogs***
 
-[![运行时：.NET 10](https://img.shields.io/static/v1?label=%E8%BF%90%E8%A1%8C%E6%97%B6&message=.NET%2010&color=512BD4&style=flat-square&logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
-[![界面：WPF](https://img.shields.io/static/v1?label=%E7%95%8C%E9%9D%A2&message=WPF&color=512BD4&style=flat-square)](#项目结构)
-[![图像：OpenCvSharp4](https://img.shields.io/static/v1?label=%E5%9B%BE%E5%83%8F&message=OpenCvSharp4&color=5C3EE8&style=flat-square&logo=opencv&logoColor=white)](https://github.com/shimat/opencvsharp)
-[![OCR：Tesseract 5](https://img.shields.io/static/v1?label=OCR&message=Tesseract%205&color=2A6EBB&style=flat-square)](https://github.com/tesseract-ocr/tesseract)
-[![测试：214](https://img.shields.io/badge/%E6%B5%8B%E8%AF%95-214%20passed-25A162?style=flat-square)](#测试)
-[![平台：Windows x64](https://img.shields.io/static/v1?label=%E5%B9%B3%E5%8F%B0&message=Windows%20x64&color=0078D6&style=flat-square&logo=windows&logoColor=white)](#环境要求)
+[![Runtime: .NET 10](https://img.shields.io/static/v1?label=runtime&message=.NET%2010&color=512BD4&style=flat-square&logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
+[![UI: WPF](https://img.shields.io/static/v1?label=UI&message=WPF&color=512BD4&style=flat-square)](#project-layout)
+[![Imaging: OpenCvSharp4](https://img.shields.io/static/v1?label=imaging&message=OpenCvSharp4&color=5C3EE8&style=flat-square&logo=opencv&logoColor=white)](https://github.com/shimat/opencvsharp)
+[![OCR: Tesseract 5](https://img.shields.io/static/v1?label=OCR&message=Tesseract%205&color=2A6EBB&style=flat-square)](https://github.com/tesseract-ocr/tesseract)
+[![Tests: 244](https://img.shields.io/badge/tests-244%20passed-25A162?style=flat-square)](#testing)
+[![Platform: Windows x64](https://img.shields.io/static/v1?label=platform&message=Windows%20x64&color=0078D6&style=flat-square&logo=windows&logoColor=white)](#requirements)
 
-读屏识别游戏地图上的坐标读数，实时解算迫击炮的方位角与距离，透明置顶显示。
+Reads the coordinate readout off the in-game map, solves the bearing and range to your target, and shows them in a click-through always-on-top overlay.
 
-[快速开始](#快速开始) ｜ [界面](#界面) ｜ [OCR](#ocr) ｜ [项目结构](#项目结构) ｜ [已知边界](#已知边界)
+**English** ｜ [中文](README.zh-CN.md)
+
+[Quick start](#quick-start) ｜ [UI](#ui) ｜ [OCR](#ocr) ｜ [Project layout](#project-layout) ｜ [Known limits](#known-limits)
 
 </div>
 
-## 它做什么
+## What it does
 
-《Wardogs》打开地图后，鼠标指向任意位置，游戏会在光标旁显示该点的绝对坐标。MortarHUD 读出这两行，算出炮位到目标的方位角与距离。
+Open the map in *Wardogs* and point at any spot — the game shows the absolute coordinates of that point next to your cursor. MortarHUD reads those two lines and works out the bearing and range from your mortar to the target.
 
 ```text
-输入（游戏画面）        输出（HUD）
-y109.78                AZ  079.0°
-x98.09                 RNG 152m
+input (game screen)     output (HUD)
+y109.78                 AZ  079.0°
+x98.09                  RNG 152m
 ```
 
-读的是绝对坐标，所以地图缩放、平移、重新居中都不影响结果。炮位锁定后即使自己的地图箭头消失（进入迫击炮后常见），已保存的炮位依然有效。
+Because it reads *absolute* coordinates, zooming, panning and re-centering the map make no difference. Once the gun position is locked it stays valid even after your own map marker disappears — which happens as soon as you get on a mortar.
 
-### 安全边界
+### Safety boundaries
 
-- 不注入进程，不读写游戏内存
-- 不模拟任何键鼠输入
-- 不联网，OCR 全在本地跑
-- 普通用户权限运行，不需要管理员
+- No process injection, no reading or writing game memory
+- No simulated keyboard or mouse input
+- No network access; OCR runs entirely locally
+- Runs as a normal user, no administrator rights
 
-只做两件事：注册全局热键，按键那一刻截取屏幕上一小块。不实现自动瞄准、弹道模拟、风偏修正、敌人识别——输出只有方位角和距离两个数。
+It does exactly two things: register global hotkeys, and grab a small region of the screen at the moment you press one. No auto-aim, no ballistics simulation, no wind correction, no enemy detection — the output is two numbers, bearing and range.
 
-## 界面
+## UI
 
-![MortarHUD 设置界面](docs/images/settings-window.png)
+![MortarHUD settings window](docs/images/settings-window-en.png)
 
-三页：日常使用 / 外观 / 诊断。键位、HUD 大小与位置默认展开，字体特效、引擎路径这类收在折叠项里。
+Three pages: Daily use / Appearance / Diagnostics. Hotkeys, HUD size and position are expanded by default; font effects and engine paths are tucked into collapsible sections.
 
-## 快速开始
+The interface ships in Chinese and English. On first launch it picks one from your system language (Chinese systems get Chinese, everything else gets English); you can change it later under **Daily use → Language**, and it takes effect after a restart.
 
-需要 **.NET 10 SDK**，仅支持 **Windows x64**。
+## Quick start
+
+Requires the **.NET 10 SDK**. **Windows x64 only.**
 
 ```bash
 dotnet build MortarHUD.sln -c Release
 dotnet test MortarHUD.sln
-publish.cmd                     # 自包含发布，用户端不需要装 .NET
+publish.cmd                     # self-contained; end users need no runtime
 ```
 
-也可以直接下 [Release](https://github.com/Cec1c/MortarHUD/releases) 里的便携版，解压双击 `MortarHUD.exe`。
+Or grab the portable build from [Releases](https://github.com/Cec1c/MortarHUD/releases) and just double-click `MortarHUD.exe`.
 
-首次使用：
+First run:
 
 ```text
-1. 启动程序，关掉设置窗口后它留在系统托盘
-2. 打开游戏地图，鼠标移到炮位，按 F6
-3. 鼠标移到目标，按鼠标中键
-4. 换目标重复第 3 步
+1. Start the app; closing the settings window leaves it in the system tray
+2. Open the in-game map, move the cursor onto your mortar, press F6
+3. Move the cursor onto the target, press the middle mouse button
+4. Repeat step 3 for each new target
 ```
 
-| 热键 | 作用 |
+| Hotkey | Action |
 | --- | --- |
-| `F6` | 记录炮位 |
-| `鼠标中键` | 记录目标 |
-| `F8` | 显示 / 隐藏 HUD |
-| `F9` | 打开设置 |
+| `F6` | Record gun position |
+| `Middle mouse` | Record target |
+| `F8` | Show / hide HUD |
+| `F9` | Open settings |
 
-全部可在设置里改。记录目标默认用中键而非 F7，是因为 F 键区常和游戏本身的功能打架。
+All of them are rebindable. Target capture defaults to the middle mouse button rather than F7 because the function-key row tends to clash with the game's own bindings.
 
-识别失败时 HUD 显示 `OCR FAILED` 并保留上一个目标，不会拿一个可能是错的坐标继续用。
+When a read fails the HUD says so and keeps the previous target — it never carries on with a coordinate that might be wrong.
 
-### 按 M 自动校准
+### Auto-calibration with the map key
 
-游戏里按 **M** 开地图时鼠标会复位到屏幕中心，也就是自己所在的位置，所以按 M 等价于把光标移到炮位上。
+Pressing **M** in game opens the map and the cursor is re-centered on your own position, so pressing M is equivalent to putting the cursor on the mortar.
 
-走的是观察型监听（Raw Input），只监听不拦截——`RegisterHotKey` 会截住 M，游戏就收不到、地图打不开。按下后等 350ms 再读，且只有光标确实回到前台窗口中心才采用结果，没归位就跳过并记日志。移动鼠标、切窗、关图都会取消挂起的校准。
+This uses an observing listener (Raw Input) rather than `RegisterHotKey` — the latter would swallow the M key, the game would never see it and the map would not open. After the key is pressed MortarHUD waits 350 ms, then only accepts the result if the cursor really is back at the center of the foreground window; otherwise it skips and says so on the HUD. Moving the mouse, switching windows or closing the map cancels a pending calibration.
 
 > [!TIP]
-> 第一次用建议先开**诊断 → 查看单次识别结果**，点一次「对当前光标位置测试一次」。它会显示实际截到的图、预处理结果和每条流水线的原始文本，能立刻看出 ROI 有没有框住坐标。
+> The first time you use it, open **Diagnostics → Inspect a single recognition** and click the test button. It shows the captured image, the preprocessed result and the raw text from every pipeline, which immediately tells you whether the ROI is framing the coordinates.
 
-## 坐标系与解算
+## Coordinate system and solving
 
 ```text
-+X = 东（East）      +Y = 北（North）
-1 坐标单位 ≈ 100 米
-方位角：北 = 0°，东 = 90°，南 = 180°，西 = 270°
++X = East            +Y = North
+1 coordinate unit ≈ 100 m
+Bearing: North = 0°, East = 90°, South = 180°, West = 270°
 
-dx = X目标 − X炮位
-dy = Y目标 − Y炮位
+dx = Xtarget − Xgun
+dy = Ytarget − Ygun
 
-RNG = √(dx² + dy²) × 每单位米数
-AZ  = atan2(dx, dy) 转角度，归一到 [0, 360)
+RNG = √(dx² + dy²) × metersPerUnit
+AZ  = atan2(dx, dy) in degrees, normalized to [0, 360)
 ```
 
-`atan2` 的参数顺序是 **(东分量, 北分量)**，和常见的 `(y, x)` 相反，有覆盖八个方向的单元测试钉住。全部可配置。
+Note the argument order of `atan2` is **(east, north)**, the opposite of the usual `(y, x)`; unit tests covering all eight directions pin this down. Everything here is configurable.
 
 ## OCR
 
-读出光标附近那两行坐标，**读两遍**：同一套二值化图像，分别用 Tesseract 的两种分页模式
-（单一文本块 / 稀疏文本）各读一次。两个读数不一致就整体判失败——不投票，也不挑一个看着顺眼的用下去。
+It reads the two coordinate lines near the cursor **twice**: the same binarized image, read once with each of two Tesseract page segmentation modes (single block / sparse text). If the two readings disagree the whole capture fails — no voting, and no quietly picking whichever one looks better.
 
 ```bash
-dotnet run --project tools/MortarHUD.Benchmark     # 生成 docs/ocr-benchmark.md
+dotnet run --project tools/MortarHUD.Benchmark     # writes docs/ocr-benchmark.md
 ```
 
-当前基准（3 张实机截图）：
+Current baseline (3 real screenshots):
 
-| 配置 | 正确率 | 平均耗时 |
+| Configuration | Accuracy | Average time |
 | --- | --- | --- |
-| **Auto（生产默认）** | **3/3** | ~163 ms |
-| Tesseract + 流水线 C | 3/3 | ~55 ms |
+| **Auto (production default)** | **3/3** | ~163 ms |
+| Tesseract + pipeline C | 3/3 | ~55 ms |
 
-两种分页模式各有固定的错法，而且互不重叠：6 偶发把末位数字读错（99.75 对真值 99.73），
-11 偶发丢掉前导数字（0.07 对真值 110.07）。凑在一起互相校验，单条会错的样本合起来读对。
+Each segmentation mode has its own characteristic mistake and they do not overlap: mode 6 occasionally misreads the last digit (99.75 against a true 99.73), mode 11 occasionally drops leading digits (0.07 against a true 110.07). Together they check each other, and a sample that defeats one is still read correctly.
 
-ROI 默认值 `offset(5, −74)`、`100×96`，是拿实机「整屏 + 光标位置」同刻采样量出来的文字块外围 +12px。不同分辨率按屏幕高度相对 1080 自动缩放。
+The default ROI is `offset(5, −74)`, `100×96` — the text block measured from real "full screen + cursor position" sampling, plus 12 px of margin. It scales with screen height relative to 1080p.
 
-| 设置项 | 默认值 |
+| Setting | Default |
 | --- | --- |
-| 引擎 / 预处理 | Auto（Tesseract + 流水线 C，两种分页模式交叉校验） |
-| 坐标范围 | 0 – 200 |
-| 最低置信度 | 0.60 |
-| 必须识别出小数点 | 开 |
+| Engine / preprocessing | Auto (Tesseract + pipeline C, cross-checked across two segmentation modes) |
+| Coordinate range | 0 – 200 |
+| Minimum confidence | 0.60 |
+| Require a decimal point | on |
 
-置信度不是引擎自报的值——实测 Tesseract 对**读对**的坐标也会给 0.00。程序用的是综合置信度：
+Confidence is *not* the engine's own number — measured against real captures, Tesseract reports 0.00 for coordinates it read **correctly**. MortarHUD computes a combined score:
 
 ```text
-0.55（格式与范围校验通过）
-+ 0.25 ×（一致读数 / 总读数）
-+ 0.20 ×（引擎自报置信度）
+0.55  (format and range validation passed)
++ 0.25 × (agreeing readings / total readings)
++ 0.20 × (engine's own confidence)
 ```
 
-在**汇总之后**才和门槛比较，所以某个读数自报 0.00 不会一票否决。反过来调到 0.9 时，即便两个读数一致也会被拦掉（0.55 + 0.25 = 0.80 封顶）。
+That is compared against the threshold only *after* aggregation, so one reading reporting 0.00 cannot veto the result on its own. Conversely, raising the threshold to 0.9 will reject everything, because 0.55 + 0.25 = 0.80 is the ceiling for two agreeing readings.
 
-关掉「必须识别出小数点」后，`98.09` 读成 `98` 也算合法坐标——那是 81 米误差，别关。
+Turning "require a decimal point" off lets `98` count as a valid reading of `98.09` — an 81-metre error. Leave it on.
 
-### 模板引擎
+### Template engine
 
-语言包缺失时的兜底，字形库从实机截图里自动学出来：
+A fallback for when the language data is missing. Its glyph library is learned from real screenshots:
 
 ```bash
 dotnet run --project tools/MortarHUD.Benchmark -- --gen-templates
 ```
 
-当前覆盖 `x y . 0 1 4 5 6 7 8 9`，**缺数字 2 和 3**（三张截图里没出现过）。遇到不认识的字形输出 `?` 而不是猜值，解析器随即判失败。Tesseract 覆盖全部十个数字，所以生产默认走它。
+It currently covers `x y . 0 1 4 5 6 7 8 9` and is **missing 2 and 3** (they never appeared in the sample screenshots). Unknown glyphs are reported as `?` rather than guessed, and the parser then fails the capture. Tesseract covers all ten digits, which is why it is the production default.
 
-## 配置
+## Configuration
 
 ```text
 %AppData%\MortarHUD\
-├─ settings.json      # 主设置（带 schemaVersion）
-├─ Themes\            # 自定义 HUD 主题，每个主题一个 JSON
-├─ Logs\              # 按天分文件，自动清理 14 天前
-└─ Debug\             # 转储的 ROI 与识别结果（默认关闭）
+├─ settings.json      # main settings (with schemaVersion)
+├─ Themes\            # custom HUD themes, one JSON per theme
+├─ Logs\              # one file per day, pruned after 14 days
+└─ Debug\             # dumped ROIs and results (off by default)
 ```
 
-HUD 可改布局（Minimal / Compact / Detailed / Horizontal）、字体字号字重、字间距行距、七个颜色项、描边阴影背景板、不透明度、锚点与偏移、显示字段、小数位。位置支持填锚点+偏移，或勾选「解锁 HUD 位置」后直接拖。
+The HUD can be adjusted in layout (Minimal / Compact / Detailed / Horizontal), font family, size and weight, letter and line spacing, seven colours, outline, shadow and background panel, opacity, anchor and offset, which fields to show, and decimal places. Position is either an anchor plus offset, or tick "unlock HUD position" and drag it directly.
 
-内置四套主题：Default Green、Tactical White、Amber、High Contrast。内置主题不能删改，可以「另存为」出自定义主题再改，支持导入导出。
+Four built-in themes: Default Green, Tactical White, Amber, High Contrast. Built-in themes cannot be edited or deleted — use "Save as" to fork one into a custom theme, and themes can be imported and exported.
 
-## 项目结构
+## Project layout
 
 ```text
 src/
-├─ MortarHUD.Core/               # 纯计算，无 Windows / UI 依赖
+├─ MortarHUD.Localization/       # UI strings (zh / en), no dependencies
+│
+├─ MortarHUD.Core/               # pure logic, no Windows or UI dependency
 │  ├─ Models/ Ballistics/ Parsing/ Validation/
-│  ├─ Session/                   # 状态机、HUD 排版、操作调度
-│  ├─ Configuration/ Themes/     # 设置与主题
-│  └─ Diagnostics/               # 文件日志
+│  ├─ Session/                   # state machine, HUD layout, operation scheduling
+│  ├─ Configuration/ Themes/     # settings and themes
+│  └─ Diagnostics/               # file logging
 │
-├─ MortarHUD.Capture/            # 截屏 → 预处理 → OCR
-│  ├─ ScreenCapture/             # GDI 截屏 + ROI 计算
-│  ├─ ImageProcessing/           # Pipeline A / B / C
-│  └─ Ocr/                       # 引擎接口、Tesseract、模板匹配、交叉验证
+├─ MortarHUD.Capture/            # capture → preprocess → OCR
+│  ├─ ScreenCapture/             # GDI capture + ROI maths
+│  ├─ ImageProcessing/           # pipelines A / B / C
+│  └─ Ocr/                       # engine interface, Tesseract, template matching, cross-validation
 │
-├─ MortarHUD.Platform.Windows/   # Win32 互操作
-│  ├─ Hotkeys/                   # Raw Input 监听
+├─ MortarHUD.Platform.Windows/   # Win32 interop
+│  ├─ Hotkeys/                   # Raw Input listeners
 │  ├─ Mouse/ WindowStyles/ Dpi/ Startup/
 │
 └─ MortarHUD.App/                # WPF
    ├─ Views/ ViewModels/ Services/ Tray/
-   ├─ Assets/                    # 应用图标
-   └─ Models/                    # 随程序发布的 OCR 资源
+   ├─ Localization/              # XAML markup extension for the string table
+   ├─ Assets/                    # application icon
+   └─ Models/                    # OCR resources shipped with the app
 
 tests/                           # Core.Tests / Ocr.Tests / Fixtures
-tools/MortarHUD.Benchmark/       # 基准测试 + 字形模板生成
+tools/MortarHUD.Benchmark/       # benchmark + glyph template generation
 ```
 
-各层解耦：`Capture ≠ OCR ≠ Parser ≠ Calculator ≠ Overlay`，每层可单独替换和测试。OCR 引擎藏在 `ICoordinateOcrEngine` 后面，预处理藏在 `IImagePreprocessor` 后面。
+The layers are decoupled: `Capture ≠ OCR ≠ Parser ≠ Calculator ≠ Overlay`, and each can be replaced and tested on its own. OCR engines sit behind `ICoordinateOcrEngine`, preprocessing behind `IImagePreprocessor`.
 
-## 测试
+## Testing
 
 ```bash
-dotnet test MortarHUD.sln       # 214 个（188 Core + 26 OCR）
+dotnet test MortarHUD.sln       # 244 tests (218 Core + 26 OCR)
 ```
 
-覆盖解算八方向与 `[0, 360)` 边界、解析的合法与必须拒绝格式、状态机语义（无炮位拒绝计算、OCR 失败不污染目标）、ROI 缩放与多显示器负原点、三张真实截图的端到端 OCR、预处理极性、设置与主题的读写往返。
+Coverage includes all eight solving directions and the `[0, 360)` boundary, the formats the parser must accept and must reject, state-machine semantics (no solving without a gun position, a failed OCR never corrupts the target), ROI scaling and negative multi-monitor origins, end-to-end OCR on three real screenshots, preprocessing polarity, and settings/theme round-trips.
 
-启动自检走完整启动流程（构造全部窗口 + 跑一次真实识别），但不显示窗口、不注册热键、不截屏：
+The self-test walks the full startup path (constructs every window and runs one real recognition) without showing windows, registering hotkeys or capturing the screen:
 
 ```bash
-dist\MortarHUD\MortarHUD.exe --selftest        # 退出码 0 表示通过
+dist\MortarHUD\MortarHUD.exe --selftest        # exit code 0 means it passed
 ```
 
-识别结果不对会算作失败并返回非 0，不会出现「识别挂了但自检仍然绿」。
+A wrong recognition counts as a failure and returns non-zero, so you can't get a green self-test on a broken OCR path.
 
-## 分发
+## Distribution
 
-| 方式 | 命令 | 体积 | 目标机器需要 |
+| Mode | Command | Size | Runtime needed on target |
 | --- | --- | --- | --- |
-| **单文件便携版**（默认） | `publish.cmd` | ~95 MB | 什么都不用装 |
-| 自包含文件夹 | `publish.cmd folder` | ~227 MB | 什么都不用装 |
-| 框架依赖 | `publish.cmd runtime` | ~60 MB | .NET 10 桌面运行时 |
+| **Single-file portable** (default) | `publish.cmd` | ~95 MB | nothing |
+| Self-contained folder | `publish.cmd folder` | ~227 MB | nothing |
+| Framework-dependent | `publish.cmd runtime` | ~60 MB | .NET 10 desktop runtime |
 
-输出到 `dist\MortarHUD-next-<模式>\`，目录非空时拒绝发布（避免新旧 DLL 混在一起）。便携版是**真正的单文件**——`Models\`（OCR 语言包与字形库）也一并打包，运行时释放到 `%TEMP%\.net\`。体积大头是 .NET 运行时和 `OpenCvSharpExtern.dll`（59 MB）；项目自身三个 DLL 加起来 0.25 MB。压到 95 MB 靠的是单文件压缩、剔掉 OpenCV 的 FFmpeg 插件和 Tesseract 的 x86 库。
+Output goes to `dist\MortarHUD-next-<mode>\`; a non-empty directory is refused so old and new DLLs never get mixed. The portable build is a **genuine single file** — `Models\` (OCR language data and glyph library) is packed inside too and extracted to `%TEMP%\.net\` at runtime. Most of the size is the .NET runtime and `OpenCvSharpExtern.dll` (59 MB); the project's own three DLLs add up to 0.25 MB. Getting down to 95 MB takes single-file compression plus dropping OpenCV's FFmpeg plugin and Tesseract's x86 libraries.
 
 > [!NOTE]
-> 单文件模式启动时要把原生库解压到 `%TEMP%\.net\` 再加载，比文件夹模式慢一点，分发体积的下降也不等于磁盘占用下降。在意启动速度就用 `folder`。
+> Single-file mode has to extract the native libraries to `%TEMP%\.net\` before loading them, so it starts a little slower than folder mode — and a smaller download does not mean less disk usage. Use `folder` if startup time matters.
 
-## 已知边界
+## Known limits
 
-需要真人操作、自动化不了的：
+Things that need a human and cannot be automated:
 
-- Overlay 是否真置顶、真鼠标穿透、不抢焦点、Alt+Tab 行为
-- 100% / 125% / 150% / 200% DPI 下的位置与 ROI
-- 多显示器
-- 窗口化 / 无边框窗口 / 独占全屏三种模式
-- 热键与游戏本身是否冲突
+- Whether the overlay is genuinely always-on-top, click-through, and does not steal focus — plus Alt+Tab behaviour
+- Position and ROI at 100% / 125% / 150% / 200% DPI
+- Multiple monitors
+- Windowed / borderless windowed / exclusive fullscreen
+- Whether the hotkeys clash with the game's own bindings
 
 > [!IMPORTANT]
-> 独占全屏下 HUD 可能不可见或截图失败，这是外置工具的固有限制，不会通过注入进程绕过。**推荐无边框窗口模式**。
+> In exclusive fullscreen the HUD may be invisible or screen capture may fail. That is an inherent limitation of an external tool and will not be worked around by injecting into the process. **Borderless windowed mode is recommended.**
 
-其它：模板引擎缺数字 2、3；没有安装包；ROI 默认值按 1080p 实测，游戏 UI 缩放差得多的话需要用「诊断 → 查看单次识别结果」调一次。
+Also: the template engine is missing digits 2 and 3, there is no installer, and the default ROI was measured at 1080p — if your game UI scale differs a lot, adjust it once via **Diagnostics → Inspect a single recognition**.
 
-## 开发
+## Development
 
-加预处理流水线：实现 `IImagePreprocessor`，返回黑字白底的单通道 `Mat`，在 `PreprocessorFactory.All` 注册。基准表现够好再考虑加进 `AutoCandidates`——每多一条流水线 `Auto` 就多约 40ms，而端到端目标是 100ms 以内。
+Adding a preprocessing pipeline: implement `IImagePreprocessor`, return a single-channel "black text on white" `Mat`, and register it in `PreprocessorFactory.All`. Only consider adding it to `AutoCandidates` once the benchmark likes it — every extra pipeline costs `Auto` about 40 ms and the end-to-end target is under 100 ms.
 
-加 OCR 引擎：实现 `ICoordinateOcrEngine`。引擎只管把字读出来填 `RawText` 与 `Confidence`，`X`/`Y` 一律留空，数值解析交给 `CoordinateTextParser`。
+Adding an OCR engine: implement `ICoordinateOcrEngine`. An engine only fills in `RawText` and `Confidence`; leave `X`/`Y` empty and let `CoordinateTextParser` do the numeric parsing.
 
-调试 OCR——预处理结果肉眼可见，这是唯一靠谱的手段：
+Debugging OCR — seeing the preprocessed image is the only reliable method:
 
 ```bash
 dotnet run --project tools/MortarHUD.Benchmark -- --dump ./_analysis/processed
 ```
 
-把每条流水线在每张 fixture 上的二值化结果写成 PNG。先看图，再看识别结果，不要反过来。
+This writes the binarized output of every pipeline on every fixture as a PNG. Look at the image first, then at the recognition result — never the other way round.
 
-程序内对应功能在**诊断**页：「查看单次识别结果」显示原图、预处理图、每条流水线的文本与耗时；「收集接下来 10 次采集」把原始 ROI、各流水线预处理图和结果 JSON 一并落盘后自动停止，排查间歇性失败用这个。
+The same facilities are in the app under **Diagnostics**: "Inspect a single recognition" shows the raw image, the preprocessed images, and each pipeline's text and timing; "Collect the next 10 captures" dumps raw ROIs, preprocessed images and result JSON, then stops automatically — that is the tool for intermittent failures.
 
-日志在 `%AppData%\MortarHUD\Logs\yyyy-MM-dd.log`，记录启动、退出、热键、采集、OCR 原始输出、校验失败与异常。
+Logs live in `%AppData%\MortarHUD\Logs\yyyy-MM-dd.log` and record startup, shutdown, hotkeys, captures, raw OCR output, validation failures and exceptions.
 
 > [!NOTE]
-> 要接手继续开发先读 **[AGENTS.md](AGENTS.md)** —— 环境坑、架构、踩过的雷都在里面。
+> Picking up development? Read **[AGENTS.md](AGENTS.md)** first — environment gotchas, architecture, and the traps already stepped on are all in there.
 
 ---
 
-## 协议
+## License
 
 [Apache-2.0](LICENSE) © 2026 Cec1c
 
-只读取屏幕像素。使用它意味着你接受由此带来的一切后果，包括但不限于游戏服务条款方面的风险。
+It only reads screen pixels. Using it means accepting all consequences, including but not limited to any risk under the game's terms of service.
