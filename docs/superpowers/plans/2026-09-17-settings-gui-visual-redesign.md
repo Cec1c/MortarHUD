@@ -19,7 +19,7 @@
 - 间距只用 `4 / 8 / 12 / 16 / 22 / 26 / 32`
 - 圆角：卡片 `12`、控件 `8`、小件 `5`、轨道 `2`
 - 顶部栏、底部栏、内容区左右内边距必须都是 `26`
-- 不改任何 `.cs` 文件、任何绑定表达式、任何页面结构、任何界面文案（规格中点名要删的两处除外）
+- 不改任何 `.cs` 文件、任何绑定表达式、任何页面结构、任何界面文案（规格中点名要删的「离线坐标辅助」除外）
 - 注释写「为什么」，不写「是什么」；全中文
 
 ## 关于验证方式
@@ -677,17 +677,20 @@ git commit -m "style: 重写按钮/开关/滑块/折叠项模板"
           <Border x:Name="Chrome" Padding="10,14" Margin="0,0,0,3" CornerRadius="8" Background="Transparent" BorderThickness="0" BorderBrush="Transparent">
 ```
 
-把第 43–45 行的悬停触发器替换为：
+把第 43–48 行的两个触发器（`IsMouseOver` 与 `IsKeyboardFocused`）一起替换为：
 
 ```xml
             <Trigger Property="IsMouseOver" Value="True">
               <Setter TargetName="Chrome" Property="Background" Value="#0EFFFFFF"/>
               <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
             </Trigger>
+            <Trigger Property="IsKeyboardFocused" Value="True">
+              <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+            </Trigger>
 ```
 
-删掉第 46–48 行的 `IsKeyboardFocused` 触发器：导航项的键盘焦点用背景提亮表达更自然，
-边框线会和选中态的圆角块打架。
+原来的 `IsKeyboardFocused` 会画一圈强调色边框，和选中态的圆角块打架。
+改成只提亮文字——**键盘焦点的可见指示必须保留**，键盘用户要靠它知道光标在哪一项上。
 
 第 40 行的选中底色已经是 `AccentSoftBrush`（Task 1 改过），无需再动。
 
@@ -711,7 +714,7 @@ git commit -m "style: 重写按钮/开关/滑块/折叠项模板"
     <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
     <Setter Property="FontSize" Value="12"/>
     <Setter Property="FontWeight" Value="Bold"/>
-    <Setter Property="Margin" Value="0,0,0,12"/>
+    <Setter Property="Margin" Value="0,16,0,10"/>
   </Style>
   <Style x:Key="Hint" TargetType="TextBlock">
     <Setter Property="Foreground" Value="{StaticResource SubtleTextBrush}"/>
@@ -721,8 +724,10 @@ git commit -m "style: 重写按钮/开关/滑块/折叠项模板"
   </Style>
 ```
 
-`SectionHeader` 的 `Margin` 从 `0,16,0,10` 改为 `0,0,0,12`：原来的上边距让每个区块标题都往下掉，
-区块之间的呼吸靠外层容器的 Margin 统一控制更可控。
+`SectionHeader` 只改字号（14→12）与字重（SemiBold→Bold），**`Margin` 保持 `0,16,0,10` 不动**。
+这个样式同时用在卡片内（如「操作按键」）和页面级区块（如「主题预设」）：
+卡片内靠它撑出与卡片顶边的距离，页面级靠它分隔区块。把上边距归零会让页面级区块标题
+紧贴上一行说明文字，很不舒服——不要动它。
 
 - [ ] **Step 4: 调整页面标题与卡片**
 
