@@ -309,7 +309,7 @@
           </ScrollViewer>
           <DockPanel Grid.Column="2">
             <TextBlock DockPanel.Dock="Top" Text="HUD 预览" Style="{StaticResource SectionHeader}"/>
-            <Border Background="#0F151A" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="12">
+            <Border Background="{StaticResource SurfaceSunkenBrush}" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="12">
               <Grid>
                 <TextBlock Text="示例坐标 · 保存后应用到游戏" Foreground="{StaticResource SubtleTextBrush}" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="16" FontSize="11"/>
                 <views:HudRenderer x:Name="PreviewRenderer" Margin="10" VerticalAlignment="Center" HorizontalAlignment="Left"/>

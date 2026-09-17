@@ -8,7 +8,7 @@
     -->
   <!--
         表面分四层：窗口底 < 顶底栏 < 卡片，输入控件反过来做成凹陷。
-        改动前这几层几乎同一个明度（#151B21 / #202932 / #2A3540），卡片浮不起来，
+        改动前这几层几乎同一个明度（#151B21 / #202932），卡片浮不起来，
         整页看着是一块平板 —— 这是「简陋」最主要的来源。
 
         边框改用半透明白而不是实色（原来是 #34434F）：实色边框在深色底上会
@@ -18,6 +18,8 @@
   <SolidColorBrush x:Key="SurfaceRaisedBrush" Color="#181F25"/>
   <SolidColorBrush x:Key="SurfaceCardBrush" Color="#1B242B"/>
   <SolidColorBrush x:Key="SurfaceSunkenBrush" Color="#0F151A"/>
+  <!-- 卡片上控件的悬停层：比 SurfaceCardBrush 亮一档，这样按钮悬停时在卡片里仍看得出抬起。 -->
+  <SolidColorBrush x:Key="SurfaceHoverBrush" Color="#222D35"/>
 
   <SolidColorBrush x:Key="BorderSubtleBrush" Color="#0EFFFFFF"/>
   <SolidColorBrush x:Key="BorderBrush" Color="#17FFFFFF"/>
@@ -46,7 +48,7 @@
     <Setter Property="Template">
       <Setter.Value>
         <ControlTemplate TargetType="TabItem">
-          <Border x:Name="Chrome" Padding="10,14" Margin="0,0,0,3" CornerRadius="8" Background="Transparent" BorderThickness="0" BorderBrush="Transparent">
+          <Border x:Name="Chrome" Padding="10,14" Margin="0,0,0,3" CornerRadius="8" Background="Transparent" BorderThickness="1" BorderBrush="Transparent">
             <ContentPresenter ContentSource="Header" VerticalAlignment="Center" TextElement.Foreground="{TemplateBinding Foreground}"/>
           </Border>
           <ControlTemplate.Triggers>
@@ -54,16 +56,18 @@
               <Setter TargetName="Chrome" Property="Background" Value="{StaticResource BorderSubtleBrush}"/>
               <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
             </Trigger>
-            <!--
-                焦点只提亮文字，不画强调色边框：选中项本身就是一块圆角强调色块，
-                再套一圈同色描边会糊成一团。但指示必须保留 —— 键盘用户靠它定位光标。
-            -->
-            <Trigger Property="IsKeyboardFocused" Value="True">
-              <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
-            </Trigger>
             <Trigger Property="IsSelected" Value="True">
               <Setter TargetName="Chrome" Property="Background" Value="{StaticResource AccentSoftBrush}"/>
               <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
+            </Trigger>
+            <!--
+                焦点画一圈 1px 强调色描边，而不是只提亮文字：选中项的文字本来就是强调色，
+                只改前景色对「已选中的项」等于没有指示。描边常驻（Thickness=1，平时透明），
+                所以补上颜色不会让文字位移。触发放在选中之后 —— 聚焦的选中项要同时拿到
+                强调色底块和这圈描边。键盘用户靠它定位光标。
+            -->
+            <Trigger Property="IsKeyboardFocused" Value="True">
+              <Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
             </Trigger>
           </ControlTemplate.Triggers>
         </ControlTemplate>
@@ -121,7 +125,7 @@
             <!--
                             ToggleButton 铺满整块区域负责点击与开合；
                             选中项的文字画在它上面（IsHitTestVisible=False），
-                            右侧留 26px 给箭头，避免长文本压住箭头。
+                            右侧留 32px 给箭头，避免长文本压住箭头。
                         -->
             <ToggleButton Focusable="False" ClickMode="Press" IsChecked="{Binding IsDropDownOpen, Mode=TwoWay,                                                           RelativeSource={RelativeSource TemplatedParent}}">
               <ToggleButton.Template>
@@ -143,9 +147,7 @@
             <!-- 名字必须是 PART_Popup：ComboBox 的代码里按这个名字找它。 -->
             <Popup x:Name="PART_Popup" AllowsTransparency="True" Placement="Bottom" Focusable="False" IsOpen="{TemplateBinding IsDropDownOpen}">
               <Border MinWidth="{TemplateBinding ActualWidth}" MaxHeight="{TemplateBinding MaxDropDownHeight}" Background="{StaticResource SurfaceRaisedBrush}" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="8" Margin="0,4,0,0">
-                <Border.Effect>
-                  <DropShadowEffect BlurRadius="16" ShadowDepth="4" Direction="270" Opacity="0.5" Color="#000000"/>
-                </Border.Effect>
+                <!-- 不加投影：WPF 的 Effect 不参与 measure，弹层窗口按 Border 尺寸创建，阴影会被裁掉。 -->
                 <ScrollViewer>
                   <ItemsPresenter/>
                 </ScrollViewer>
@@ -179,7 +181,7 @@
                 和键盘焦点：底栏三个按钮若同时亮成绿色，主次就没了。
             -->
             <Trigger Property="IsMouseOver" Value="True">
-              <Setter TargetName="Chrome" Property="Background" Value="{StaticResource SurfaceCardBrush}"/>
+              <Setter TargetName="Chrome" Property="Background" Value="{StaticResource SurfaceHoverBrush}"/>
               <Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource BorderStrongBrush}"/>
               <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
             </Trigger>
@@ -207,7 +209,7 @@
           </Border>
           <ControlTemplate.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
-              <Setter TargetName="Chrome" Property="Background" Value="{StaticResource SurfaceCardBrush}"/>
+              <Setter TargetName="Chrome" Property="Background" Value="{StaticResource SurfaceHoverBrush}"/>
               <Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource BorderStrongBrush}"/>
             </Trigger>
             <Trigger Property="IsKeyboardFocused" Value="True">
@@ -249,7 +251,7 @@
                 <RepeatButton Command="Slider.IncreaseLarge" Focusable="False">
                   <RepeatButton.Template>
                     <ControlTemplate TargetType="RepeatButton">
-                      <Border Height="4" CornerRadius="2" Background="{StaticResource SurfaceSunkenBrush}" VerticalAlignment="Center"/>
+                      <Border Height="4" CornerRadius="2" Background="{StaticResource BorderStrongBrush}" VerticalAlignment="Center"/>
                     </ControlTemplate>
                   </RepeatButton.Template>
                 </RepeatButton>
@@ -311,13 +313,13 @@
             </DockPanel>
           </Border>
           <ControlTemplate.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+              <Setter TargetName="Box" Property="BorderBrush" Value="{StaticResource BorderStrongBrush}"/>
+            </Trigger>
             <Trigger Property="IsChecked" Value="True">
               <Setter TargetName="Check" Property="Visibility" Value="Visible"/>
               <Setter TargetName="Box" Property="Background" Value="{StaticResource AccentSoftBrush}"/>
               <Setter TargetName="Box" Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
-            </Trigger>
-            <Trigger Property="IsMouseOver" Value="True">
-              <Setter TargetName="Box" Property="BorderBrush" Value="{StaticResource BorderStrongBrush}"/>
             </Trigger>
             <Trigger Property="IsKeyboardFocused" Value="True">
               <Setter TargetName="Focus" Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
@@ -480,7 +482,7 @@
     <Setter Property="Template">
       <Setter.Value>
         <ControlTemplate TargetType="Thumb">
-          <Border x:Name="Bar" Background="#24FFFFFF" CornerRadius="3"/>
+          <Border x:Name="Bar" Background="#24FFFFFF" CornerRadius="2"/>
           <ControlTemplate.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
               <Setter TargetName="Bar" Property="Background" Value="#3DFFFFFF"/>
@@ -545,5 +547,22 @@
         </Setter>
       </Trigger>
     </Style.Triggers>
+  </Style>
+  <!-- ==================== 工具提示 ==================== -->
+  <!--
+        默认的 ToolTip 是浅色的 SystemColors.Info 框，在深色界面上一弹出来就是一块亮斑。
+        滑块的值提示、语言包路径提示都会用到它，所以必须一起换掉。
+    -->
+  <Style TargetType="ToolTip">
+    <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="ToolTip">
+          <Border Background="{StaticResource SurfaceRaisedBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="8" Padding="10,8">
+            <ContentPresenter TextElement.Foreground="{StaticResource TextBrush}"/>
+          </Border>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
   </Style>
 </ResourceDictionary>
