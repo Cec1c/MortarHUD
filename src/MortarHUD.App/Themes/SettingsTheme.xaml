@@ -29,7 +29,7 @@
 
   <SolidColorBrush x:Key="TextBrush" Color="#E6EDF3"/>
   <SolidColorBrush x:Key="MutedTextBrush" Color="#A4B4C2"/>
-  <SolidColorBrush x:Key="SubtleTextBrush" Color="#6B7C8A"/>
+  <SolidColorBrush x:Key="SubtleTextBrush" Color="#7E8F9D"/>
   <!--
         ============================================================
         为什么要手写控件模板，而不是只设 Foreground / Background：
@@ -50,12 +50,8 @@
             <ContentPresenter ContentSource="Header" VerticalAlignment="Center" TextElement.Foreground="{TemplateBinding Foreground}"/>
           </Border>
           <ControlTemplate.Triggers>
-            <Trigger Property="IsSelected" Value="True">
-              <Setter TargetName="Chrome" Property="Background" Value="{StaticResource AccentSoftBrush}"/>
-              <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
-            </Trigger>
             <Trigger Property="IsMouseOver" Value="True">
-              <Setter TargetName="Chrome" Property="Background" Value="#0EFFFFFF"/>
+              <Setter TargetName="Chrome" Property="Background" Value="{StaticResource BorderSubtleBrush}"/>
               <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
             </Trigger>
             <!--
@@ -64,6 +60,10 @@
             -->
             <Trigger Property="IsKeyboardFocused" Value="True">
               <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+            </Trigger>
+            <Trigger Property="IsSelected" Value="True">
+              <Setter TargetName="Chrome" Property="Background" Value="{StaticResource AccentSoftBrush}"/>
+              <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
             </Trigger>
           </ControlTemplate.Triggers>
         </ControlTemplate>
@@ -76,8 +76,8 @@
         <ControlTemplate TargetType="TabControl">
           <DockPanel>
             <!--
-                导航栏与内容区之间刻意不画竖分隔线：两边的底色层次不同，
-                内容区又自带 26px 左内边距，再加一条线只是噪音。
+                导航栏与内容区之间刻意不画竖分隔线：两边底色同为 SurfaceBrush，
+                区隔靠内容区自带的 26px 左内边距，再加一条线只是噪音。
             -->
             <Border DockPanel.Dock="Left" Width="168" Background="{StaticResource SurfaceBrush}" Padding="14,18,14,0">
               <TabPanel IsItemsHost="True" VerticalAlignment="Top"/>
