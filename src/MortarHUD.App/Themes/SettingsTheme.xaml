@@ -6,16 +6,29 @@
         注意这只是「设置界面」的主题，与 HUD 自身的主题系统（Core/Themes）无关 ——
         HUD 的颜色完全由用户选择的 HUD 主题决定。
     -->
-  <Color x:Key="SurfaceColor">#151B21</Color>
-  <Color x:Key="SurfaceAltColor">#202932</Color>
-  <Color x:Key="BorderColor">#34434F</Color>
-  <Color x:Key="AccentColor">#7ECDB8</Color>
-  <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource SurfaceColor}"/>
-  <SolidColorBrush x:Key="SurfaceAltBrush" Color="{StaticResource SurfaceAltColor}"/>
-  <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource BorderColor}"/>
-  <SolidColorBrush x:Key="TextBrush" Color="#E4EAF0"/>
+  <!--
+        表面分四层：窗口底 < 顶底栏 < 卡片，输入控件反过来做成凹陷。
+        改动前这几层几乎同一个明度（#151B21 / #202932 / #2A3540），卡片浮不起来，
+        整页看着是一块平板 —— 这是「简陋」最主要的来源。
+
+        边框改用半透明白而不是实色（原来是 #34434F）：实色边框在深色底上会
+        形成一圈硬边，半透明则随底色自然衰减，层次更干净。
+    -->
+  <SolidColorBrush x:Key="SurfaceBrush" Color="#141A1F"/>
+  <SolidColorBrush x:Key="SurfaceRaisedBrush" Color="#181F25"/>
+  <SolidColorBrush x:Key="SurfaceCardBrush" Color="#1B242B"/>
+  <SolidColorBrush x:Key="SurfaceSunkenBrush" Color="#0F151A"/>
+
+  <SolidColorBrush x:Key="BorderSubtleBrush" Color="#0EFFFFFF"/>
+  <SolidColorBrush x:Key="BorderBrush" Color="#17FFFFFF"/>
+  <SolidColorBrush x:Key="BorderStrongBrush" Color="#24FFFFFF"/>
+
+  <SolidColorBrush x:Key="AccentBrush" Color="#7ECDB8"/>
+  <SolidColorBrush x:Key="AccentSoftBrush" Color="#227ECDB8"/>
+
+  <SolidColorBrush x:Key="TextBrush" Color="#E6EDF3"/>
   <SolidColorBrush x:Key="MutedTextBrush" Color="#A4B4C2"/>
-  <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}"/>
+  <SolidColorBrush x:Key="SubtleTextBrush" Color="#6B7C8A"/>
   <!--
         ============================================================
         为什么要手写控件模板，而不是只设 Foreground / Background：
@@ -37,7 +50,7 @@
           </Border>
           <ControlTemplate.Triggers>
             <Trigger Property="IsSelected" Value="True">
-              <Setter TargetName="Chrome" Property="Background" Value="#293C3A"/>
+              <Setter TargetName="Chrome" Property="Background" Value="{StaticResource AccentSoftBrush}"/>
               <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
             </Trigger>
             <Trigger Property="IsMouseOver" Value="True">
@@ -56,7 +69,7 @@
       <Setter.Value>
         <ControlTemplate TargetType="TabControl">
           <DockPanel>
-            <Border DockPanel.Dock="Left" Width="140" Background="#11171C" Padding="0,18,0,0" BorderThickness="0,0,1,0" BorderBrush="{StaticResource BorderBrush}">
+            <Border DockPanel.Dock="Left" Width="140" Background="{StaticResource SurfaceBrush}" Padding="0,18,0,0" BorderThickness="0,0,1,0" BorderBrush="{StaticResource BorderBrush}">
               <TabPanel IsItemsHost="True" VerticalAlignment="Top"/>
             </Border>
             <Border Background="{StaticResource SurfaceBrush}" Padding="{TemplateBinding Padding}">
@@ -77,7 +90,7 @@
           </Border>
           <ControlTemplate.Triggers>
             <Trigger Property="IsHighlighted" Value="True">
-              <Setter TargetName="Chrome" Property="Background" Value="#3A4A38"/>
+              <Setter TargetName="Chrome" Property="Background" Value="{StaticResource AccentSoftBrush}"/>
               <Setter TargetName="Chrome" Property="TextElement.Foreground" Value="{StaticResource AccentBrush}"/>
             </Trigger>
             <Trigger Property="IsSelected" Value="True">
@@ -103,7 +116,7 @@
             <ToggleButton Focusable="False" ClickMode="Press" IsChecked="{Binding IsDropDownOpen, Mode=TwoWay,                                                           RelativeSource={RelativeSource TemplatedParent}}">
               <ToggleButton.Template>
                 <ControlTemplate TargetType="ToggleButton">
-                  <Border x:Name="Chrome" Background="{StaticResource SurfaceAltBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="3">
+                  <Border x:Name="Chrome" Background="{StaticResource SurfaceSunkenBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="3">
                     <Path HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,8,0" Data="M 0,0 L 8,0 L 4,5 Z" Fill="{StaticResource MutedTextBrush}"/>
                   </Border>
                   <ControlTemplate.Triggers>
@@ -117,7 +130,7 @@
             <ContentPresenter IsHitTestVisible="False" Content="{TemplateBinding SelectionBoxItem}" ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" Margin="9,5,26,5" VerticalAlignment="Center" TextElement.Foreground="{StaticResource TextBrush}"/>
             <!-- 名字必须是 PART_Popup：ComboBox 的代码里按这个名字找它。 -->
             <Popup x:Name="PART_Popup" AllowsTransparency="True" Placement="Bottom" Focusable="False" IsOpen="{TemplateBinding IsDropDownOpen}">
-              <Border MinWidth="{TemplateBinding ActualWidth}" MaxHeight="{TemplateBinding MaxDropDownHeight}" Background="{StaticResource SurfaceAltBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="3" Margin="0,2,0,0">
+              <Border MinWidth="{TemplateBinding ActualWidth}" MaxHeight="{TemplateBinding MaxDropDownHeight}" Background="{StaticResource SurfaceRaisedBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="3" Margin="0,2,0,0">
                 <ScrollViewer>
                   <ItemsPresenter/>
                 </ScrollViewer>
@@ -133,7 +146,7 @@
     <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
     <Setter Property="Padding" Value="14,8"/>
     <Setter Property="MinHeight" Value="34"/>
-    <Setter Property="Background" Value="{StaticResource SurfaceAltBrush}"/>
+    <Setter Property="Background" Value="{StaticResource SurfaceRaisedBrush}"/>
     <Setter Property="Margin" Value="0,0,8,0"/>
     <Setter Property="Template">
       <Setter.Value>
@@ -166,7 +179,7 @@
     <Setter Property="Template">
       <Setter.Value>
         <ControlTemplate TargetType="ToggleButton">
-          <Border x:Name="Chrome" Background="{StaticResource SurfaceAltBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="3" Padding="{TemplateBinding Padding}">
+          <Border x:Name="Chrome" Background="{StaticResource SurfaceRaisedBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="3" Padding="{TemplateBinding Padding}">
             <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="Center" TextElement.Foreground="{StaticResource TextBrush}"/>
           </Border>
           <ControlTemplate.Triggers>
@@ -194,7 +207,7 @@
                 <Thumb Width="14" Height="14" Cursor="Hand">
                   <Thumb.Template>
                     <ControlTemplate TargetType="Thumb">
-                      <Ellipse Fill="{StaticResource AccentBrush}" Stroke="#14161A" StrokeThickness="2"/>
+                      <Ellipse Fill="{StaticResource AccentBrush}" Stroke="{StaticResource SurfaceSunkenBrush}" StrokeThickness="2"/>
                     </ControlTemplate>
                   </Thumb.Template>
                 </Thumb>
@@ -245,7 +258,7 @@
               <Setter TargetName="Focus" Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
             </Trigger>
             <Trigger Property="IsMouseOver" Value="True">
-              <Setter TargetName="Box" Property="Background" Value="{StaticResource SurfaceAltBrush}"/>
+              <Setter TargetName="Box" Property="Background" Value="{StaticResource SurfaceRaisedBrush}"/>
             </Trigger>
             <Trigger Property="IsEnabled" Value="False">
               <Setter TargetName="Focus" Property="Opacity" Value="0.45"/>
@@ -259,7 +272,7 @@
     <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
   </Style>
   <Style TargetType="TextBox">
-    <Setter Property="Background" Value="{StaticResource SurfaceAltBrush}"/>
+    <Setter Property="Background" Value="{StaticResource SurfaceSunkenBrush}"/>
     <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
     <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
     <Setter Property="Padding" Value="8,6"/>
@@ -269,7 +282,7 @@
     <Setter Property="CaretBrush" Value="{StaticResource AccentBrush}"/>
   </Style>
   <Style TargetType="ListBox">
-    <Setter Property="Background" Value="{StaticResource SurfaceAltBrush}"/>
+    <Setter Property="Background" Value="{StaticResource SurfaceSunkenBrush}"/>
     <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
     <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
   </Style>
@@ -296,13 +309,13 @@
   <Style x:Key="Card" TargetType="Border">
     <Setter Property="Padding" Value="18"/>
     <Setter Property="CornerRadius" Value="8"/>
-    <Setter Property="Background" Value="{StaticResource SurfaceAltBrush}"/>
+    <Setter Property="Background" Value="{StaticResource SurfaceCardBrush}"/>
     <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
     <Setter Property="BorderThickness" Value="1"/>
   </Style>
   <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
     <Setter Property="Background" Value="{StaticResource AccentBrush}"/>
-    <Setter Property="Foreground" Value="#102922"/>
+    <Setter Property="Foreground" Value="#0F1F1B"/>
     <Setter Property="FontWeight" Value="SemiBold"/>
   </Style>
   <Style TargetType="Expander">

@@ -19,7 +19,7 @@
       </DockPanel>
     </Border>
     <!-- 底部操作条 -->
-    <Border DockPanel.Dock="Bottom" Background="{StaticResource SurfaceAltBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="12">
+    <Border DockPanel.Dock="Bottom" Background="{StaticResource SurfaceRaisedBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="12">
       <Grid>
         <Grid.ColumnDefinitions>
           <ColumnDefinition Width="*"/>
