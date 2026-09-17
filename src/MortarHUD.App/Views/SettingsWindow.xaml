@@ -6,20 +6,17 @@
     <views:HotkeyDisplayConverter x:Key="HotkeyDisplay"/>
   <views:SettingLabelConverter x:Key="SettingLabel"/></Window.Resources>
   <DockPanel>
-    <Border DockPanel.Dock="Top" Padding="24,18" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
-      <DockPanel>
-        <TextBlock DockPanel.Dock="Right" Text="离线坐标辅助" VerticalAlignment="Center" Style="{StaticResource Hint}"/>
-        <StackPanel Orientation="Horizontal">
-          <Image Source="/Assets/MortarHUD.png" Width="32" Height="32" Margin="0,0,12,0"/>
-          <StackPanel>
-            <TextBlock Text="MortarHUD" FontSize="20" FontWeight="SemiBold"/>
-            <TextBlock Text="WARDOGS · 迫击炮坐标解算" Style="{StaticResource Hint}"/>
-          </StackPanel>
+    <Border DockPanel.Dock="Top" Background="{StaticResource SurfaceRaisedBrush}" Padding="26,16" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="0,0,0,1">
+      <StackPanel Orientation="Horizontal">
+        <Image Source="/Assets/MortarHUD.png" Width="22" Height="22" Margin="0,0,10,0"/>
+        <StackPanel VerticalAlignment="Center">
+          <TextBlock Text="MortarHUD" FontSize="12" FontWeight="SemiBold"/>
+          <TextBlock Text="WARDOGS · 迫击炮坐标解算" Foreground="{StaticResource SubtleTextBrush}" FontSize="11"/>
         </StackPanel>
-      </DockPanel>
+      </StackPanel>
     </Border>
     <!-- 底部操作条 -->
-    <Border DockPanel.Dock="Bottom" Background="{StaticResource SurfaceRaisedBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="12">
+    <Border DockPanel.Dock="Bottom" Background="{StaticResource SurfaceRaisedBrush}" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="0,1,0,0" Padding="26,14">
       <Grid>
         <Grid.ColumnDefinitions>
           <ColumnDefinition Width="*"/>
@@ -34,7 +31,7 @@
         </StackPanel>
       </Grid>
     </Border>
-    <TabControl x:Name="Tabs" Background="{StaticResource SurfaceBrush}" BorderThickness="0" Padding="28,16,28,24" TabStripPlacement="Left">
+    <TabControl x:Name="Tabs" Background="{StaticResource SurfaceBrush}" BorderThickness="0" Padding="26,22,26,26" TabStripPlacement="Left">
       <TabItem Header="日常使用">
         <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
           <StackPanel>
@@ -312,12 +309,10 @@
           </ScrollViewer>
           <DockPanel Grid.Column="2">
             <TextBlock DockPanel.Dock="Top" Text="HUD 预览" Style="{StaticResource SectionHeader}"/>
-            <Border DockPanel.Dock="Bottom" Padding="8">
-                        </Border>
-            <Border Background="#141414" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="4">
+            <Border Background="#0F151A" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="12">
               <Grid>
-                <TextBlock Text="示例坐标 · 保存后应用到游戏" Foreground="{StaticResource MutedTextBrush}" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="16" FontSize="11"/>
-                <views:HudRenderer x:Name="PreviewRenderer" Margin="10" VerticalAlignment="Top" HorizontalAlignment="Left"/>
+                <TextBlock Text="示例坐标 · 保存后应用到游戏" Foreground="{StaticResource SubtleTextBrush}" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="16" FontSize="11"/>
+                <views:HudRenderer x:Name="PreviewRenderer" Margin="10" VerticalAlignment="Center" HorizontalAlignment="Left"/>
               </Grid>
             </Border>
           </DockPanel>
