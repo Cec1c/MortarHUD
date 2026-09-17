@@ -775,6 +775,125 @@ git commit -m "style: 导航项/卡片/文本样式统一到新设计语言"
 
 ---
 
+### Task 5b: 滚动条深色样式
+
+Task 5 完成后的截图暴露了一个计划未覆盖的缺陷：设置页右侧的**滚动条还是 WPF 默认的浅灰色**，
+在深色界面上是一道刺眼的白条。这是「丑」最直接的来源之一，而前五个任务都没有碰它——
+规格的控件清单里漏了 `ScrollBar`。本任务补上。
+
+**Files:**
+- Modify: `src/MortarHUD.App/Themes/SettingsTheme.xaml`（追加两个样式，放在文件末尾 `</ResourceDictionary>` 之前）
+
+**Interfaces:**
+- Consumes: Task 1 的颜色键
+- Produces: 无（叶子任务）
+
+- [ ] **Step 1: 追加滚动条样式**
+
+在 `SettingsTheme.xaml` 的 `</ResourceDictionary>` 之前追加：
+
+```xml
+  <!-- ==================== 滚动条 ==================== -->
+  <!--
+        默认的 Aero2 滚动条是浅灰色的，在深色设置界面上是一道刺眼的白条。
+        换成细的深色滑块：轨道透明，滑块用半透明白，悬停与拖动时逐级提亮。
+        不画上下箭头按钮 —— 现代桌面应用普遍省掉它们，10px 的宽度也放不下。
+    -->
+  <Style x:Key="SettingsScrollThumb" TargetType="Thumb">
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="Thumb">
+          <Border x:Name="Bar" Background="#24FFFFFF" CornerRadius="3"/>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+              <Setter TargetName="Bar" Property="Background" Value="#3DFFFFFF"/>
+            </Trigger>
+            <Trigger Property="IsDragging" Value="True">
+              <Setter TargetName="Bar" Property="Background" Value="#59FFFFFF"/>
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <Style TargetType="ScrollBar">
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="Width" Value="10"/>
+    <Setter Property="MinWidth" Value="10"/>
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="ScrollBar">
+          <Grid Background="{TemplateBinding Background}">
+            <!-- PART_Track 是 ScrollBar 按名字查找的，不能改名。 -->
+            <Track x:Name="PART_Track" IsDirectionReversed="True">
+              <Track.DecreaseRepeatButton>
+                <RepeatButton Command="ScrollBar.PageUpCommand" Opacity="0" Focusable="False"/>
+              </Track.DecreaseRepeatButton>
+              <Track.Thumb>
+                <Thumb Style="{StaticResource SettingsScrollThumb}" Margin="2,0"/>
+              </Track.Thumb>
+              <Track.IncreaseRepeatButton>
+                <RepeatButton Command="ScrollBar.PageDownCommand" Opacity="0" Focusable="False"/>
+              </Track.IncreaseRepeatButton>
+            </Track>
+          </Grid>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+    <Style.Triggers>
+      <Trigger Property="Orientation" Value="Horizontal">
+        <Setter Property="Width" Value="Auto"/>
+        <Setter Property="MinWidth" Value="0"/>
+        <Setter Property="Height" Value="10"/>
+        <Setter Property="MinHeight" Value="10"/>
+        <Setter Property="Template">
+          <Setter.Value>
+            <ControlTemplate TargetType="ScrollBar">
+              <Grid Background="{TemplateBinding Background}">
+                <Track x:Name="PART_Track" IsDirectionReversed="False">
+                  <Track.DecreaseRepeatButton>
+                    <RepeatButton Command="ScrollBar.PageLeftCommand" Opacity="0" Focusable="False"/>
+                  </Track.DecreaseRepeatButton>
+                  <Track.Thumb>
+                    <Thumb Style="{StaticResource SettingsScrollThumb}" Margin="0,2"/>
+                  </Track.Thumb>
+                  <Track.IncreaseRepeatButton>
+                    <RepeatButton Command="ScrollBar.PageRightCommand" Opacity="0" Focusable="False"/>
+                  </Track.IncreaseRepeatButton>
+                </Track>
+              </Grid>
+            </ControlTemplate>
+          </Setter.Value>
+        </Setter>
+      </Trigger>
+    </Style.Triggers>
+  </Style>
+```
+
+`Opacity="0"` 的分页按钮不影响点击——WPF 里 `Opacity` 不参与命中测试（`Visibility="Hidden"`
+和 `IsHitTestVisible="False"` 才会），所以点轨道空白处仍然翻页。
+
+- [ ] **Step 2: 构建、自检、截图**
+
+Run:
+```bash
+DEV="src/MortarHUD.App/bin/Release/net10.0-windows"
+"C:/dotnet10/dotnet.exe" build MortarHUD.sln -c Release
+(cd "$DEV" && DOTNET_ROOT="C:/dotnet10" ./MortarHUD.exe --selftest; echo "退出码: $?")
+(cd "$DEV" && DOTNET_ROOT="C:/dotnet10" ./MortarHUD.exe --screenshot "../../../../../_analysis/ui-task5b")
+```
+Expected: 构建无警告无错误；自检通过退出码 0；截图里右侧滚动条是细的深色滑块，不再是白条
+
+- [ ] **Step 3: 提交**
+
+```bash
+git add src/MortarHUD.App/Themes/SettingsTheme.xaml
+git commit -m "style: 补滚动条深色样式，消掉设置页右侧的白条"
+```
+
+---
+
 ### Task 6: 全量验证与收尾
 
 **Files:**
