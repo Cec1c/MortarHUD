@@ -1,6 +1,6 @@
 using System.Diagnostics;
 using MortarHUD.Localization;
-using System.Text.Json;
+using MortarHUD.Capture.Diagnostics;
 using MortarHUD.Capture.Ocr;
 using MortarHUD.Capture.ScreenCapture;
 using MortarHUD.Core.Configuration;
@@ -63,6 +63,7 @@ public sealed class MortarCaptureService : IDisposable
     private readonly Func<RoiSettings> _roiSettingsAccessor;
     private readonly Action<string>? _log;
     private readonly Func<DebugSettings>? _debugSettingsAccessor;
+    private readonly string? _sampleDirectory;
 
     /// <summary>
     /// 采集闸门：同一时刻只允许一次采集。
@@ -76,6 +77,7 @@ public sealed class MortarCaptureService : IDisposable
     private readonly SemaphoreSlim _gate = new(1, 1);
 
     private bool _disposed;
+    private SampleFrameWriter? _sampleWriter;
 
     public MortarCaptureService(
         IScreenCaptureProvider captureProvider,
@@ -83,7 +85,8 @@ public sealed class MortarCaptureService : IDisposable
         CoordinateRecognizer recognizer,
         Func<RoiSettings> roiSettingsAccessor,
         Action<string>? log = null,
-        Func<DebugSettings>? debugSettingsAccessor = null)
+        Func<DebugSettings>? debugSettingsAccessor = null,
+        string? sampleDirectory = null)
     {
         _captureProvider = captureProvider;
         _cursorProvider = cursorProvider;
@@ -91,6 +94,7 @@ public sealed class MortarCaptureService : IDisposable
         _roiSettingsAccessor = roiSettingsAccessor;
         _log = log;
         _debugSettingsAccessor = debugSettingsAccessor;
+        _sampleDirectory = sampleDirectory;
     }
 
     public async Task<CaptureOutcome> CaptureAsync(CancellationToken cancellationToken = default)
@@ -108,71 +112,14 @@ public sealed class MortarCaptureService : IDisposable
 
         try
         {
-            if (!_cursorProvider.TryGetCursorPosition(out var cursorX, out var cursorY))
-            {
-                return CaptureOutcome.Failed(Loc.T("CAPTUREFAILEDCannotReadTheCursorPosition"), totalWatch.Elapsed);
-            }
-
-            var roi = _roiSettingsAccessor();
-            var virtualScreen = OverlayWindowController.GetVirtualScreenBounds();
-
-            // 缩放基准取「光标所在那块显示器的物理高度」，不能取虚拟桌面总高度
-            // （上下拼接多屏时会大得离谱），更不能除以 DPI 缩放系数
-            // （游戏 UI 是按渲染分辨率画的，和 Windows 的缩放比例无关）。
-            var screenHeight = ResolveMonitorHeight(cursorX, cursorY, virtualScreen.Height);
-
-            var rect = RoiCalculator.Compute(cursorX, cursorY, roi, screenHeight, virtualScreen);
-
-            SaveSampleFrameIfEnabled(virtualScreen, cursorX, cursorY);
-
-            var captureWatch = Stopwatch.StartNew();
-            Mat image;
-
-            try
-            {
-                image = _captureProvider.Capture(rect);
-            }
-            catch (ScreenCaptureException ex)
-            {
-                _log?.Invoke($"截图失败：{ex.Message}");
-                return CaptureOutcome.Failed($"CAPTURE_FAILED: {ex.Message}", totalWatch.Elapsed);
-            }
-
-            captureWatch.Stop();
-
-            try
-            {
-                using (image)
-                {
-                    // 把光标在 ROI 内的位置交给识别器：它要在预处理前把光标锚点
-                    // （游戏画的箭头和括号）抹掉，否则会和 x 行混成一行。
-                    var cursorInRoi = new System.Drawing.Point(cursorX - rect.X, cursorY - rect.Y);
-
-                    var recognition = await _recognizer
-                        .RecognizeAsync(image, cancellationToken, cursorInRoi)
-                        .ConfigureAwait(false);
-
-                    totalWatch.Stop();
-
-                    return new CaptureOutcome
-                    {
-                        Recognition = recognition,
-                        Cursor = new System.Drawing.Point(cursorX, cursorY),
-                        Roi = rect,
-                        CaptureTime = captureWatch.Elapsed,
-                        TotalTime = totalWatch.Elapsed,
-                    };
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                _log?.Invoke($"识别失败：{ex}");
-                return CaptureOutcome.Failed($"OCR_FAILED: {ex.Message}", totalWatch.Elapsed);
-            }
+            using var frame = CaptureFrame(cancellationToken);
+            return await RecognizeFrameAsync(frame, cancellationToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) { throw; }
+        catch (Exception ex)
+        {
+            _log?.Invoke($"采集失败：{ex}");
+            return CaptureOutcome.Failed($"CAPTURE_FAILED: {ex.Message}", totalWatch.Elapsed);
         }
         finally
         {
@@ -198,54 +145,45 @@ public sealed class MortarCaptureService : IDisposable
         return virtualScreenHeight > 0 ? virtualScreenHeight : 1080;
     }
 
-    /// <summary>
-    /// 采样模式下额外存一张整屏 + 当时的光标位置。
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// 存整屏而不是只存 ROI，是因为要标定「坐标文字在光标的哪个方位」时，
-    /// ROI 本身给不出参照——只有整屏加上光标位置这一对，才能事后把文字量准。
-    /// </para>
-    /// <para>
-    /// 用 <c>ImEncode</c> 而不是 <c>ImWrite</c>：后者对非 ASCII 路径会静默失败，
-    /// 而 <c>%AppData%</c> 在中文用户名下就是非 ASCII 的。
-    /// </para>
-    /// </remarks>
-    private void SaveSampleFrameIfEnabled(System.Drawing.Rectangle virtualScreen, int cursorX, int cursorY)
+    /// <summary>只截取画面，不等待 OCR 或 PNG 编码；允许 M 在短窗口内保存连续帧。</summary>
+    public CaptureFrame CaptureFrame(CancellationToken token = default)
     {
-        if (_debugSettingsAccessor?.Invoke().SaveFullFrame != true)
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        token.ThrowIfCancellationRequested();
+        if (!_cursorProvider.TryGetCursorPosition(out var x, out var y))
+            throw new ScreenCaptureException("无法读取光标位置");
+        var bounds = OverlayWindowController.GetVirtualScreenBounds();
+        var rect = RoiCalculator.Compute(x, y, _roiSettingsAccessor(), ResolveMonitorHeight(x, y, bounds.Height), bounds);
+        var watch = Stopwatch.StartNew();
+        var capturedAt = DateTime.Now;
+        Mat image;
+        if (_debugSettingsAccessor?.Invoke().SaveFullFrame == true)
         {
-            return;
-        }
-
-        try
-        {
-            var stamp = DateTime.Now.ToString("yyyy-MM-dd_HHmmss_fff");
-            Directory.CreateDirectory(AppPaths.SamplesDirectory);
-
-            using var frame = _captureProvider.Capture(virtualScreen);
-            Cv2.ImEncode(".png", frame, out var encoded);
-            File.WriteAllBytes(Path.Combine(AppPaths.SamplesDirectory, $"{stamp}_frame.png"), encoded);
-
-            var payload = JsonSerializer.Serialize(new
+            // ROI 必须来自同一份画面。旧实现先编码整屏再另截 ROI，样本清晰而 OCR 已被浮层遮住。
+            var full = _captureProvider.Capture(bounds);
+            try
             {
-                timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"),
-                cursor = new { x = cursorX, y = cursorY },
-                screen = new
-                {
-                    x = virtualScreen.X,
-                    y = virtualScreen.Y,
-                    w = virtualScreen.Width,
-                    h = virtualScreen.Height,
-                },
-            }, new JsonSerializerOptions { WriteIndented = true });
+                using var region = new Mat(full, new Rect(rect.X - bounds.X, rect.Y - bounds.Y, rect.Width, rect.Height));
+                image = region.Clone();
+            }
+            catch { full.Dispose(); throw; }
+            (_sampleWriter ??= new SampleFrameWriter(_log, _sampleDirectory)).Enqueue(full, bounds, new(x, y), capturedAt);
+        }
+        else image = _captureProvider.Capture(rect);
+        return new CaptureFrame { Image = image, Cursor = new(x, y), Roi = rect, CaptureTime = watch.Elapsed };
+    }
 
-            File.WriteAllText(Path.Combine(AppPaths.SamplesDirectory, $"{stamp}_sample.json"), payload);
-        }
-        catch (Exception ex) when (ex is OpenCVException or IOException or UnauthorizedAccessException or ScreenCaptureException)
+    public async Task<CaptureOutcome> RecognizeFrameAsync(CaptureFrame frame, CancellationToken token = default)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        var watch = Stopwatch.StartNew();
+        var cursorInRoi = new System.Drawing.Point(frame.Cursor.X - frame.Roi.X, frame.Cursor.Y - frame.Roi.Y);
+        var result = await _recognizer.RecognizeAsync(frame.Image, token, cursorInRoi).ConfigureAwait(false);
+        return new CaptureOutcome
         {
-            _log?.Invoke($"采样保存失败：{ex.Message}");
-        }
+            Recognition = result, Cursor = frame.Cursor, Roi = frame.Roi,
+            CaptureTime = frame.CaptureTime, TotalTime = frame.CaptureTime + watch.Elapsed,
+        };
     }
 
     public void Dispose()
@@ -256,6 +194,7 @@ public sealed class MortarCaptureService : IDisposable
         }
 
         _disposed = true;
+        _sampleWriter?.Dispose();
         _captureProvider.Dispose();
         _gate.Dispose();
         GC.SuppressFinalize(this);

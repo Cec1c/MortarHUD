@@ -54,6 +54,7 @@ public partial class App : Application
 
     private MortarSession? _session;
     private HudController? _hud;
+    private SightRulerController? _ruler;
     private MortarCaptureService? _captureService;
     private DebugArtifactWriter? _debugWriter;
     private CaptureDiagnostics? _debugObserver;
@@ -196,6 +197,7 @@ public partial class App : Application
 
         Step(Loc.T("CreateTheHUDOverlayWindow"), () => _overlay = new OverlayWindow());
         Step(Loc.T("CreateTheDebugPanelWindow"), () => _debugOverlay = new DebugOverlayWindow());
+        Step("构造炮口标尺窗口", () => _ = new SightRulerWindow());
         Step(Loc.T("CreateTheHUDController"), () => _hud = new HudController(_session!, _overlay!, () => _settings.Hud));
 
         Step(Loc.T("RunOneEndToEndRecognition"), () =>
@@ -305,9 +307,36 @@ public partial class App : Application
                 }
 
                 Console.WriteLine(Loc.F("Rendered", path));
+                if (tabs?.Items[index] is System.Windows.Controls.TabItem { Content: RulerSettingsPanel panel })
+                {
+                    panel.ScrollToBottomForDiagnostics();
+                    root.UpdateLayout();
+                    var lowerBitmap = new System.Windows.Media.Imaging.RenderTargetBitmap(
+                        width, height, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+                    lowerBitmap.Render(root);
+                    var lowerEncoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+                    lowerEncoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(lowerBitmap));
+                    using var lowerStream = File.Create(Path.Combine(outputDirectory, "03-炮口标尺-bottom.png"));
+                    lowerEncoder.Save(lowerStream);
+                }
             }
 
             Console.WriteLine($"共 {count} 页。");
+            foreach (var (pixelWidth, pixelHeight, range) in new[] { (1920, 1080, 327.0), (2560, 1440, 340.0), (3840, 2160, 684.0) })
+            {
+                var ruler = new SightRulerRenderer();
+                ruler.Update(RulerProfile.CreateDefault(pixelWidth, pixelHeight), range);
+                ruler.Measure(new System.Windows.Size(pixelWidth, pixelHeight));
+                ruler.Arrange(new System.Windows.Rect(0, 0, pixelWidth, pixelHeight));
+                ruler.UpdateLayout();
+                var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap(
+                    pixelWidth, pixelHeight, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+                bitmap.Render(ruler);
+                var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+                encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
+                using var stream = File.Create(Path.Combine(outputDirectory, $"ruler-{pixelWidth}x{pixelHeight}-{range:0}m.png"));
+                encoder.Save(stream);
+            }
             Shutdown(0);
         }
         catch (Exception ex)
@@ -456,6 +485,7 @@ public partial class App : Application
         _debugOverlay = new DebugOverlayWindow();
 
         _hud = new HudController(_session!, _overlay, () => _settings.Hud);
+        _ruler = new SightRulerController(() => _settings, () => _session);
 
         _tray = new TrayIcon();
         _tray.ShowSettingsRequested += (_, _) => ShowSettings();
@@ -556,6 +586,7 @@ public partial class App : Application
         manager.Log = message => _logger?.LogInformation("[输入] {Message}", message);
         manager.HotkeyPressed += OnHotkeyPressed;
         manager.UserActivity += (_, _) => _operations.CancelOnActivity();
+        manager.PointerMotion += (_, _) => _operations.CancelOnActivity(pointerMotion: true);
         return manager;
     }
 
@@ -565,6 +596,7 @@ public partial class App : Application
         yield return (HotkeyAction.CaptureTarget, _settings.Hotkeys.CaptureTarget);
         yield return (HotkeyAction.ToggleHud, _settings.Hotkeys.ToggleHud);
         yield return (HotkeyAction.OpenSettings, _settings.Hotkeys.OpenSettings);
+        if (_settings.Ruler.Enabled) yield return (HotkeyAction.ToggleRuler, _settings.Ruler.ToggleHotkey);
     }
 
     private void OnHotkeyPressed(object? sender, HotkeyPressedEventArgs e)
@@ -591,20 +623,115 @@ public partial class App : Application
                 case HotkeyAction.AutoCalibrateGun:
                     _ = AutoCalibrateGunAsync();
                     break;
+                case HotkeyAction.ToggleRuler:
+                    _operations.Cancel();
+                    _ruler?.Follow(CaptureContext.Foreground);
+                    _ruler?.Toggle();
+                    break;
             }
         });
     }
 
     // ------------------------------------------------------------ 采集
 
-    private Task CaptureAsync(bool isGun) => RunCaptureAsync(isGun, automatic: false);
+    private Task CaptureAsync(bool isGun) => RunCaptureAsync(isGun);
 
-    private Task AutoCalibrateGunAsync() => RunCaptureAsync(isGun: true, automatic: true);
-
-    private async Task RunCaptureAsync(bool isGun, bool automatic)
+    private async Task AutoCalibrateGunAsync()
     {
         var foreground = CaptureContext.Foreground;
-        if (automatic && !CaptureContext.IsExternal(foreground)) return;
+        if (!CaptureContext.IsExternal(foreground)) return;
+        _ruler?.Follow(foreground);
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        await _operations.RunAsync(async token =>
+        {
+            var frames = new List<CaptureFrame?>();
+            try
+            {
+                if (_captureService is null) return;
+                var count = Math.Clamp(_settings.Hotkeys.AutoCalibrateAttempts, 2, 8);
+                var firstAt = Math.Clamp(_settings.Hotkeys.AutoCalibrateDelayMs, 0, 3000);
+                // 旧 OCR 尚未退出时不把采集窗口整体后移，否则会读到浮层或用户后来指向的坐标。
+                if (clock.ElapsedMilliseconds > firstAt + (count - 1) * AutoCalibrationConsensus.FrameIntervalMs)
+                {
+                    _operations.TryCommit(token, () => ReportStatus(MortarStatusKind.AutoCalibrateSkipped, "CAPTURE_WINDOW_EXPIRED"));
+                    return;
+                }
+                for (var i = 0; i < count; i++)
+                {
+                    var due = firstAt + i * AutoCalibrationConsensus.FrameIntervalMs;
+                    var remaining = due - (int)clock.ElapsedMilliseconds;
+                    // 过期时间点不补拍，避免把同一个游戏帧的两份副本当作连续稳定读数。
+                    if (remaining < -AutoCalibrationConsensus.FrameIntervalMs / 2)
+                    {
+                        frames.Add(null);
+                        continue;
+                    }
+                    if (remaining > 0) await Task.Delay(remaining, token);
+                    token.ThrowIfCancellationRequested();
+                    // await 的续体也可能被 UI 工作延后，必须在真正截图前再守一次截止时间。
+                    if (clock.ElapsedMilliseconds > due + AutoCalibrationConsensus.FrameIntervalMs / 2)
+                    {
+                        frames.Add(null);
+                        continue;
+                    }
+                    if (CaptureContext.Foreground != foreground) throw new OperationCanceledException(token);
+                    if (!CaptureContext.TryGetCursor(out var cursor) || !CaptureContext.IsClientCenter(foreground, cursor))
+                    {
+                        frames.Add(null);
+                        continue;
+                    }
+                    var frame = _captureService.CaptureFrame(token);
+                    if (CaptureContext.Foreground != foreground || !CaptureContext.TryGetCursor(out var after)
+                        || frame.Cursor != after || !CaptureContext.IsClientCenter(foreground, frame.Cursor))
+                    {
+                        frame.Dispose();
+                        frames.Add(null);
+                        continue;
+                    }
+                    frames.Add(frame);
+                    _logger?.LogInformation("[M] 第 {Frame} 帧已冻结：按键后 {Elapsed}ms，光标={Cursor}", i + 1, clock.ElapsedMilliseconds, frame.Cursor);
+                }
+                _operations.SealFrames(token);
+                var consensus = new AutoCalibrationConsensus();
+                for (var i = 0; i < frames.Count; i++)
+                {
+                    token.ThrowIfCancellationRequested();
+                    if (frames[i] is not { } frame) { consensus.Observe(null); continue; }
+                    _debugObserver?.BeginRequest();
+                    var outcome = await _captureService.RecognizeFrameAsync(frame, token);
+                    token.ThrowIfCancellationRequested();
+                    if (CaptureContext.Foreground != foreground) throw new OperationCanceledException(token);
+                    outcome = _debugObserver?.AttachImages(outcome) ?? outcome;
+                    _debugObserver?.WriteResult(outcome, true);
+                    _logger?.LogInformation("[M] 冻结帧 {Frame}：{Details}", i + 1, CoordinateRecognizer.DescribeAttempts(outcome.Recognition.Attempts));
+                    if (consensus.Observe(outcome.Success ? outcome.Coordinate : null))
+                    {
+                        _operations.TryCommit(token, () => ApplyCapture(outcome, true));
+                        return;
+                    }
+                }
+                _operations.TryCommit(token, () => ReportStatus(MortarStatusKind.AutoCalibrateSkipped,
+                    frames.All(f => f is null) ? "CURSOR_NOT_CENTERED" : "NO_STABLE_COORDINATE"));
+                _logger?.LogInformation("[M] 未取得相邻两帧一致坐标，炮位保持不变；有效截图={Frames}", frames.Count(f => f is not null));
+            }
+            catch (OperationCanceledException) when (!token.IsCancellationRequested)
+            {
+                _operations.TryCommit(token, () => ReportStatus(MortarStatusKind.CaptureCancelled, "FOREGROUND_CHANGED"));
+            }
+            catch (OperationCanceledException) { throw; }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "M 连拍失败");
+                _operations.TryCommit(token, () => ReportStatus(MortarStatusKind.CaptureFailed, ex.Message));
+            }
+            finally { foreach (var frame in frames) frame?.Dispose(); }
+        }, onDiscarded: () => ReportStatus(MortarStatusKind.CaptureCancelled, "CONTEXT_CHANGED"));
+    }
+
+    private async Task RunCaptureAsync(bool isGun)
+    {
+        var foreground = CaptureContext.Foreground;
+        _ruler?.Follow(foreground);
         CaptureContext.TryGetCursor(out var initialCursor);
         await _operations.RunAsync(async token =>
         {
@@ -617,32 +744,10 @@ public partial class App : Application
                         token, () => ReportStatus(MortarStatusKind.NoGunPosition, "NO_GUN_POSITION"));
                     return;
                 }
-                if (automatic)
-                {
-                    await Task.Delay(Math.Clamp(_settings.Hotkeys.AutoCalibrateDelayMs, 0, 3000), token);
-                    if (!CaptureContext.TryGetCursor(out initialCursor)
-                        || !CaptureContext.IsClientCenter(foreground, initialCursor))
-                    {
-                        // 光标不在窗口中心 = 游戏没有把光标复位 = 地图多半没打开。
-                        //
-                        // 这里以前只写日志。用户界面上什么都看不到，以为按键没生效就再按一次 M，
-                        // 而 M 在游戏里是开关——第二下正好把地图关上，于是采到没有坐标读数的画面。
-                        // 必须让用户看见，这条链路才闭合。
-                        _logger?.LogInformation("自动校准跳过：光标未回中（地图多半没打开）");
-                        _operations.TryCommit(
-                            token, () => ReportStatus(MortarStatusKind.AutoCalibrateSkipped, "MAP_NOT_OPEN"));
-                        return;
-                    }
-                }
-
-                // 自动校准的重试次数走设置（TDD §18）。以前这里硬编码 2，
-                // AutoCalibrateAttempts 只在 Clone() 里被读，是个死配置。
-                var attempts = automatic
-                    ? Math.Clamp(_settings.Hotkeys.AutoCalibrateAttempts, 1, 10)
-                    : 3;
+                const int attempts = 3;
                 for (var attempt = 0; attempt < attempts; attempt++)
                 {
-                    if (attempt > 0) await Task.Delay(automatic ? 150 : 120, token);
+                    if (attempt > 0) await Task.Delay(120, token);
                     token.ThrowIfCancellationRequested();
                     if (DiscardIfContextChanged(token, Loc.T("BeforeTheCapture"))) return;
                     _debugObserver?.BeginRequest();
@@ -672,8 +777,7 @@ public partial class App : Application
         },
         // 用户动鼠标把采集取消掉时，走的是取消异常这条路径，回不到上面的 TryCommit。
         // 不在这里报一声，它就又是一次静默无响应。
-        onDiscarded: () => Dispatcher.BeginInvoke(
-            () => ReportStatus(MortarStatusKind.CaptureCancelled, "CONTEXT_CHANGED")));
+        onDiscarded: () => ReportStatus(MortarStatusKind.CaptureCancelled, "CONTEXT_CHANGED"));
 
         bool ContextUnchanged() => CaptureContext.Foreground == foreground
             && CaptureContext.TryGetCursor(out var cursor) && cursor == initialCursor;
@@ -934,12 +1038,14 @@ public partial class App : Application
         // 退出前取消尚未提交的操作。
         try
         {
-            PersistSettings();
+            // 自检会暂用默认设置，诊断退出不能把用户配置覆盖成默认值。
+            if (_startupCompleted) PersistSettings();
             _logger?.LogInformation("MortarHUD 退出");
 
             _hotkeys?.Dispose();
 
             _hud?.Dispose();
+            _ruler?.Dispose();
             _settingsWindow?.Close();
             _overlay?.Close();
             _debugOverlay?.Close();

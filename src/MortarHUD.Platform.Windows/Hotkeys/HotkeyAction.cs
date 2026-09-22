@@ -16,6 +16,7 @@ public enum HotkeyAction
     /// 所以绝不能用 RegisterHotKey 截住它。
     /// </remarks>
     AutoCalibrateGun,
+    ToggleRuler,
 }
 
 public sealed class HotkeyPressedEventArgs : EventArgs

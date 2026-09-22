@@ -88,6 +88,16 @@ public sealed class SettingsStore
     /// <summary>按 schemaVersion 做向前兼容。</summary>
     private static MortarHudSettings Migrate(MortarHudSettings settings)
     {
+        // 补齐必须先于读取旧版本字段，否则显式 null 的配置会在迁移阶段崩溃。
+        settings.General ??= new GeneralSettings();
+        settings.Hotkeys ??= new HotkeySettings();
+        settings.Hud ??= new HudSettings();
+        settings.Roi ??= new RoiSettings();
+        settings.Ocr ??= new OcrSettings();
+        settings.Debug ??= new DebugSettings();
+        settings.Ruler ??= new RulerSettings();
+        settings.Ruler.Profiles ??= [];
+        settings.Ruler.Profiles = settings.Ruler.Profiles.Where(p => p is not null && p.IsValid).ToList();
         if (settings.SchemaVersion <= 0)
         {
             settings.SchemaVersion = 1;
@@ -147,13 +157,13 @@ public sealed class SettingsStore
             settings.SchemaVersion = 4;
         }
 
-        // 兜底：老文件里缺少的嵌套对象补上，避免 NRE。
-        settings.General ??= new GeneralSettings();
-        settings.Hotkeys ??= new HotkeySettings();
-        settings.Hud ??= new HudSettings();
-        settings.Roi ??= new RoiSettings();
-        settings.Ocr ??= new OcrSettings();
-        settings.Debug ??= new DebugSettings();
+        // 仅迁移旧出厂等待值；用户手调的 200ms 等配置继续保留。
+        if (settings.SchemaVersion < 5)
+        {
+            if (settings.Hotkeys.AutoCalibrateDelayMs == 350) settings.Hotkeys.AutoCalibrateDelayMs = 150;
+            settings.SchemaVersion = 5;
+        }
+
         settings.Hud.CurrentTheme ??= HudThemeLibrary.CreateDefaultGreen();
 
         return settings;

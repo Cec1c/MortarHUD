@@ -332,6 +332,9 @@
           </DockPanel>
         </Grid>
       </TabItem>
+      <TabItem Header="炮口标尺">
+        <views:RulerSettingsPanel x:Name="RulerPanel"/>
+      </TabItem>
       <TabItem Header="{loc:T Diagnostics}">
         <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
           <StackPanel>

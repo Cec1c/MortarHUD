@@ -10,7 +10,7 @@ public sealed class HotkeySettings
     /// <summary>
     /// 记录目标。默认用鼠标中键：这个键在游戏里通常没有别的用途，
     /// 而且记录目标本来就是「鼠标指着地图上某处」的动作，用鼠标键更顺手。
-    /// 注意 RegisterHotKey 不支持鼠标键，它走的是低级鼠标钩子。
+    /// 注意 RegisterHotKey 不支持鼠标键，它走的是Raw Input。
     /// </summary>
     public string CaptureTarget { get; set; } = "MouseMiddle";
 
@@ -24,7 +24,7 @@ public sealed class HotkeySettings
     // 于是「按下 M」本身就等价于「把光标移到炮位上」，可以顺势自动记录炮位。
     //
     // 这个键<strong>不能</strong>用 RegisterHotKey 注册：那会把 M 键截住，
-    // 游戏收不到，地图根本打不开。必须用低级键盘钩子只观察不拦截。
+    // 游戏收不到，地图根本打不开。必须用Raw Input只观察不拦截。
 
     /// <summary>是否启用「按地图键自动校准炮位」。</summary>
     public bool AutoCalibrateEnabled { get; set; } = true;
@@ -37,17 +37,14 @@ public sealed class HotkeySettings
     /// </summary>
     /// <remarks>
     /// 地图有打开动画，光标也不是瞬间复位的。等太短会截到复位前的画面，
-    /// 等太久用户会感觉「迟钝」。350ms 是实机试出来的折中值，可调。
+    /// 等太久用户会感觉「迟钝」。150ms 起连续取样，避免等待 OCR 时炮位说明浮层已经盖住坐标；可调。
     /// </remarks>
-    public int AutoCalibrateDelayMs { get; set; } = 350;
+    public int AutoCalibrateDelayMs { get; set; } = 150;
 
-    /// <summary>
-    /// 最多尝试几次。
-    /// </summary>
+    /// <summary>一次开图的短时连拍数量，运行时限制在 2–8 帧。</summary>
     /// <remarks>
-    /// 光标是被游戏程序性复位的，游戏未必收到鼠标移动事件，也就未必立刻画出坐标读数。
-    /// 一次读不到不代表失败，隔一会儿再试通常就有了——重试比单纯加长延迟更稳：
-    /// 正常情况第一次就成功，不会因为等待而变慢。
+    /// 每隔 60ms 冻结一帧，再开始 OCR；连续两帧坐标一致才锁定。
+    /// 不等前一帧 OCR 完成后重截，避免说明浮层出现后才拿到画面。
     /// </remarks>
     public int AutoCalibrateAttempts { get; set; } = 4;
 

@@ -19,6 +19,11 @@ var fixturesPath = Path.Combine(repoRoot, "tests", "Fixtures", "fixtures.json");
 var screenshotDirectory = Path.Combine(repoRoot, "tests", "Fixtures", "screenshots");
 var tessdataPath = Path.Combine(repoRoot, "src", "MortarHUD.App", "Models", "tessdata");
 
+var replayIndex = Array.IndexOf(args, "--replay-samples");
+if (replayIndex >= 0 && replayIndex + 2 < args.Length)
+    return await SampleReplay.RunAsync(args[replayIndex + 1], args[replayIndex + 2], tessdataPath,
+        replayIndex + 3 < args.Length ? args[replayIndex + 3] : null, args.Contains("--legacy-gray"));
+
 if (!File.Exists(fixturesPath))
 {
     Console.Error.WriteLine($"找不到 fixture 清单：{fixturesPath}");

@@ -29,7 +29,7 @@ public abstract class PreprocessorBase : IImagePreprocessor
             throw new ImagePreprocessingException(Loc.T("TheROIIsEmptyThereIsNothingToProcess"));
         }
 
-        using var gray = ToGray(input);
+        using var gray = PrepareGray(input);
         using var upscaled = Upscale(gray, Scale);
 
         // 约定：Binarize 直接产出「黑字白底」——Tesseract 训练时见的就是这个极性。
@@ -41,6 +41,8 @@ public abstract class PreprocessorBase : IImagePreprocessor
 
     /// <summary>核心二值化步骤，由各流水线实现。必须输出「黑字白底」。</summary>
     protected abstract Mat Binarize(Mat upscaledGray);
+
+    protected virtual Mat PrepareGray(Mat input) => ToGray(input);
 
     protected static Mat ToGray(Mat input)
     {

@@ -179,7 +179,7 @@ public static class HudLayoutFormatter
         MortarStatusKind.InvalidCoordinate => Loc.T("CoordinateOutOfRange"),
         MortarStatusKind.CaptureFailed => Loc.T("CaptureFailed"),
         MortarStatusKind.CaptureCancelled => Loc.T("CursorMovedCancelled"),
-        MortarStatusKind.AutoCalibrateSkipped => Loc.T("MapNotOpen"),
+        MortarStatusKind.AutoCalibrateSkipped => Loc.T("AutoCalibrationNotReady"),
         _ => "",
     };
 
@@ -193,7 +193,7 @@ public static class HudLayoutFormatter
         MortarStatusKind.InvalidCoordinate => Loc.T("TargetUnchanged"),
         MortarStatusKind.CaptureFailed => Loc.T("TargetUnchanged"),
         MortarStatusKind.CaptureCancelled => Loc.T("TargetUnchanged"),
-        MortarStatusKind.AutoCalibrateSkipped => Loc.T("PressMAgain"),
+        MortarStatusKind.AutoCalibrateSkipped => Loc.T("AutoCalibrationRetryHint"),
         _ => null,
     };
 }

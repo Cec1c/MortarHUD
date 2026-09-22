@@ -6,7 +6,7 @@ namespace MortarHUD.Core.Configuration;
 public sealed class MortarHudSettings
 {
     /// <summary>当前 schema 版本。以后加字段时用它做 migration。</summary>
-    public const int CurrentSchemaVersion = 4;
+    public const int CurrentSchemaVersion = 5;
 
     public int SchemaVersion { get; set; } = CurrentSchemaVersion;
 
@@ -21,6 +21,7 @@ public sealed class MortarHudSettings
     public OcrSettings Ocr { get; set; } = new();
 
     public DebugSettings Debug { get; set; } = new();
+    public RulerSettings Ruler { get; set; } = new();
 
     public MortarHudSettings Clone() => new()
     {
@@ -31,5 +32,6 @@ public sealed class MortarHudSettings
         Roi = Roi.Clone(),
         Ocr = Ocr.Clone(),
         Debug = Debug.Clone(),
+        Ruler = Ruler.Clone(),
     };
 }

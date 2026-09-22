@@ -34,4 +34,14 @@ public static class CaptureContext
         return ClientToScreen(window, ref center)
             && Math.Abs(center.X - point.X) <= 8 && Math.Abs(center.Y - point.Y) <= 8;
     }
+
+    public static bool TryGetClientBounds(IntPtr window, out Rectangle bounds)
+    {
+        bounds = Rectangle.Empty;
+        if (!GetClientRect(window, out var rect)) return false;
+        var origin = new Point();
+        if (!ClientToScreen(window, ref origin)) return false;
+        bounds = new Rectangle(origin.X, origin.Y, rect.Right - rect.Left, rect.Bottom - rect.Top);
+        return bounds.Width > 0 && bounds.Height > 0;
+    }
 }

@@ -145,7 +145,7 @@ public class HudLayoutFormatterTests
     [InlineData(MortarStatusKind.InvalidCoordinate, "坐标超出范围")]
     [InlineData(MortarStatusKind.CaptureFailed, "截图失败")]
     [InlineData(MortarStatusKind.CaptureCancelled, "光标移动，已取消")]
-    [InlineData(MortarStatusKind.AutoCalibrateSkipped, "地图没打开")]
+    [InlineData(MortarStatusKind.AutoCalibrateSkipped, "未取得稳定炮位")]
     [InlineData(MortarStatusKind.None, "")]
     public void DescribeStatus_IsLocalized(MortarStatusKind status, string expected)
     {

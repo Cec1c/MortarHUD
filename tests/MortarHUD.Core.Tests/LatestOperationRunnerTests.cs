@@ -6,6 +6,42 @@ namespace MortarHUD.Core.Tests;
 public class LatestOperationRunnerTests
 {
     [Fact]
+    public async Task FrozenFramesAllowMotionButKeysClicksAndScrollStillCancel()
+    {
+        var runner = new LatestOperationRunner();
+        await runner.RunAsync(token =>
+        {
+            runner.SealFrames(token);
+            runner.CancelOnActivity(pointerMotion: true);
+            Assert.True(runner.TryCommit(token, () => { }));
+            runner.CancelOnActivity();
+            Assert.False(runner.TryCommit(token, () => Assert.Fail("点击后不得提交旧截图")));
+            return Task.CompletedTask;
+        });
+        await runner.RunAsync(token =>
+        {
+            runner.CancelOnActivity(pointerMotion: true);
+            Assert.True(token.IsCancellationRequested);
+            return Task.CompletedTask;
+        });
+    }
+
+    [Fact]
+    public async Task ActivityThenNewRequestDoesNotShowAnOldCancellationMessage()
+    {
+        var runner = new LatestOperationRunner();
+        var pending = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var discarded = 0;
+        var old = runner.RunAsync(async token => { await pending.Task; token.ThrowIfCancellationRequested(); },
+            onDiscarded: () => discarded++);
+        runner.CancelOnActivity();
+        var newer = runner.RunAsync(_ => Task.CompletedTask);
+        pending.SetResult();
+        await Task.WhenAll(old, newer);
+        Assert.Equal(0, discarded);
+    }
+
+    [Fact]
     public async Task InputDoesNotCancelQueuedSettingsApplication()
     {
         var runner = new LatestOperationRunner();

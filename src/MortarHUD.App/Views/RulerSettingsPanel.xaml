@@ -1,0 +1,69 @@
+<UserControl x:Class="MortarHUD.App.Views.RulerSettingsPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:views="clr-namespace:MortarHUD.App.Views">
+  <UserControl.Resources>
+    <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+      <Setter Property="Height" Value="38"/><Setter Property="Padding" Value="8,3"/>
+    </Style>
+  </UserControl.Resources>
+  <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+    <StackPanel>
+      <TextBlock Text="炮口距离标尺" Style="{StaticResource PageTitle}"/>
+      <TextBlock Text="记录目标后，调整炮口，让游戏里的距离刻线与外置标尺的同名刻线重合。" Style="{StaticResource Hint}"/>
+      <Grid Margin="0,20,0,0">
+        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="22"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+        <StackPanel>
+          <Border Style="{StaticResource Card}" Padding="16" Margin="0,0,0,14">
+            <StackPanel>
+              <CheckBox x:Name="EnabledCheck" Content="启用炮口标尺"/>
+              <TextBlock Text="进入炮口后使用；地图上可按快捷键收起。F8 同时控制全部 HUD。" Style="{StaticResource Hint}"/>
+              <Grid Margin="0,10,0,0">
+                <Grid.ColumnDefinitions><ColumnDefinition Width="110"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                <Label Content="显示 / 隐藏"/>
+                <TextBox x:Name="HotkeyBox" Grid.Column="1" Text="F10" AutomationProperties.Name="标尺快捷键"/>
+              </Grid>
+            </StackPanel>
+          </Border>
+          <Border Style="{StaticResource Card}" Padding="16" Margin="0,0,0,14">
+            <StackPanel>
+              <TextBlock Text="分辨率校准" Style="{StaticResource SectionHeader}"/>
+              <TextBlock Text="每种游戏分辨率独立保存。1080p 使用截图实测值，其余尺寸提供按高度缩放的初值。" Style="{StaticResource Hint}"/>
+              <ComboBox x:Name="ProfilesBox" DisplayMemberPath="DisplayName" Margin="0,12,0,8" AutomationProperties.Name="标尺分辨率"/>
+              <DockPanel>
+                <Button DockPanel.Dock="Right" Content="添加" Click="OnAddProfile" Margin="8,0,0,0"/>
+                <TextBox x:Name="ResolutionBox" Text="2560x1440" AutomationProperties.Name="新增游戏分辨率"/>
+              </DockPanel>
+              <Grid x:Name="ProfileFields" Margin="0,12,0,0">
+                <Grid.ColumnDefinitions><ColumnDefinition Width="110"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                <Label Content="标尺横坐标"/>
+                <TextBox Grid.Column="1" Text="{Binding AxisX, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True}" AutomationProperties.Name="标尺横坐标像素"/>
+                <Label Grid.Row="1" Content="准星中心高度"/>
+                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding CenterY, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True}" AutomationProperties.Name="准星中心高度像素"/>
+                <Label Grid.Row="2" Content="50 MIL 间距"/>
+                <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding PixelsPer50Mil, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True}" AutomationProperties.Name="每50MIL像素间距"/>
+              </Grid>
+              <Button Content="恢复此分辨率初值" Click="OnResetProfile" HorizontalAlignment="Left" Margin="0,10,0,0"/>
+              <TextBlock Text="单位为游戏画面像素。中心高度对准中央准星；间距量相邻两条 MIL 刻线。改变 FOV 或瞄准缩放后重新校准。" Style="{StaticResource Hint}" Margin="0,10,0,0"/>
+            </StackPanel>
+          </Border>
+          <TextBlock x:Name="Feedback" Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap"/>
+        </StackPanel>
+        <StackPanel Grid.Column="2">
+          <TextBlock Text="对齐示意" Style="{StaticResource SectionHeader}"/>
+          <DockPanel Margin="0,6,0,10">
+            <Label DockPanel.Dock="Left" Content="预览 RNG"/>
+            <Label DockPanel.Dock="Right" Content="m"/>
+            <TextBox x:Name="RangeBox" Text="327" AutomationProperties.Name="仅预览的目标距离"/>
+          </DockPanel>
+          <Border CornerRadius="8" Background="#1B2428" ClipToBounds="True">
+            <views:SightRulerRenderer x:Name="Preview" Height="410"/>
+          </Border>
+          <TextBlock Text="灰色代表游戏原刻线，白色是外置标尺，青色线代表目标 RNG。游戏里的 340m 刻线对上白色 340，就达到示例的 327m 设置。" Style="{StaticResource Hint}" Margin="0,12,0,0"/>
+          <TextBlock Text="运行时跟随已记录目标；这里的距离只用于预览。标定范围 80–684m，区间内按截图刻度插值。" Style="{StaticResource Hint}" Margin="0,10,0,0"/>
+        </StackPanel>
+      </Grid>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

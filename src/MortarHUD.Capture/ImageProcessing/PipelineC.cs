@@ -21,6 +21,34 @@ namespace MortarHUD.Capture.ImageProcessing;
 /// </remarks>
 public sealed class PipelineC : PreprocessorBase
 {
+    private readonly bool _neutralText;
+    private readonly double _neutralWeight;
+    public PipelineC(bool neutralText = true, double neutralWeight = 1)
+    {
+        _neutralText = neutralText;
+        _neutralWeight = neutralWeight;
+    }
+
+    protected override Mat PrepareGray(Mat input)
+    {
+        if (!_neutralText || input.Channels() < 3) return ToGray(input);
+        // 坐标是白色，三通道都亮；地图的青蓝边框只有部分通道亮。
+        // 普通灰度保留了边框，令 PSM 6 把 y110.38 吞成 y0.38。
+        // 纯最小值与保留半份灰度的版本对细笔画有不同误差，Auto 同时校验两者。
+        // 2026-09-22 的 132 帧回放：两者均通过 42（原 22），无旧通过帧退化。
+        // 不放宽解析或投票规则，仍然拒绝任何有效读数之间的分歧。
+        var channels = Cv2.Split(input);
+        try
+        {
+            var gray = new Mat();
+            Cv2.Min(channels[0], channels[1], gray);
+            Cv2.Min(gray, channels[2], gray);
+            using var luminance = ToGray(input);
+            Cv2.AddWeighted(gray, _neutralWeight, luminance, 1 - _neutralWeight, 0, gray);
+            return gray;
+        }
+        finally { foreach (var channel in channels) channel.Dispose(); }
+    }
     /// <summary>
     /// 结构元尺寸。必须在放大后的尺度上明显大于笔画宽度，
     /// 否则文字本身会被当作「大块亮区域」而被开运算削掉。
@@ -33,7 +61,7 @@ public sealed class PipelineC : PreprocessorBase
     /// <summary>用来估计「文字有多突出」的分位数。</summary>
     private const double StrengthReferencePercentile = 99.0;
 
-    public override string Name => "C";
+    public override string Name => _neutralText && _neutralWeight < 1 ? "C-Balanced" : "C";
 
     protected override Mat Binarize(Mat upscaledGray)
     {

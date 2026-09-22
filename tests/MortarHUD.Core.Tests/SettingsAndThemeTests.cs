@@ -30,6 +30,51 @@ public sealed class SettingsAndThemeTests : IDisposable
 
     // ------------------------------------------------------------ 设置
 
+    [Theory]
+    [InlineData(350, 150)]
+    [InlineData(200, 200)]
+    public void MigrationOnlyShortensTheOldDefaultDelay(int original, int expected)
+    {
+        var path = Path.Combine(_sandbox, "settings.json");
+        File.WriteAllText(path, System.Text.Json.JsonSerializer.Serialize(new
+        {
+            schemaVersion = 4, hotkeys = new { autoCalibrateDelayMs = original },
+        }));
+        var loaded = new SettingsStore(path).Load();
+        Assert.Equal(expected, loaded.Hotkeys.AutoCalibrateDelayMs);
+        Assert.Equal(5, loaded.SchemaVersion);
+        Assert.False(loaded.Ruler.Enabled);
+    }
+
+    [Fact]
+    public void RulerProfilesRoundTripIndependently()
+    {
+        var store = new SettingsStore(Path.Combine(_sandbox, "settings.json"));
+        var settings = new MortarHudSettings();
+        settings.Ruler.Enabled = true;
+        var second = RulerProfile.CreateDefault(2560, 1440);
+        second.AxisX = 960;
+        settings.Ruler.Profiles.Add(second);
+        store.Save(settings);
+        var loaded = store.Load();
+        Assert.True(loaded.Ruler.Enabled);
+        Assert.Equal(960, loaded.Ruler.Resolve(2560, 1440).AxisX);
+        Assert.Equal(714, loaded.Ruler.Resolve(1920, 1080).AxisX);
+        var clone = loaded.Clone();
+        clone.Ruler.Profiles[0].CenterY = 600;
+        Assert.Equal(540, loaded.Ruler.Profiles[0].CenterY);
+    }
+
+    [Fact]
+    public void ExplicitNullSectionsAreRepairedBeforeMigration()
+    {
+        var path = Path.Combine(_sandbox, "settings.json");
+        File.WriteAllText(path, """{"schemaVersion":1,"hotkeys":null,"roi":null,"ocr":null,"ruler":{"profiles":null}}""");
+        var loaded = new SettingsStore(path).Load();
+        Assert.NotNull(loaded.Hotkeys);
+        Assert.True(loaded.Ruler.Resolve(1920, 1080).IsValid);
+    }
+
     [Fact]
     public void Load_MissingFile_ReturnsDefaults()
     {

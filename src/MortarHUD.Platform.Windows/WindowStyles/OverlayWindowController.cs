@@ -105,6 +105,12 @@ public static class OverlayWindowController
             Win32.SWP_NOSIZE | Win32.SWP_NOZORDER | Win32.SWP_NOACTIVATE);
     }
 
+    public static void PlaceInClientBounds(IntPtr hwnd, System.Drawing.Rectangle bounds)
+    {
+        Win32.SetWindowPos(hwnd, Win32.HWND_TOPMOST, bounds.X, bounds.Y, bounds.Width, bounds.Height,
+            Win32.SWP_NOACTIVATE);
+    }
+
     /// <summary>
     /// 窗口所在显示器的工作区（物理像素，已扣掉任务栏）。
     /// </summary>

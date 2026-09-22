@@ -96,7 +96,7 @@ public class MortarCaptureServiceTests
         out StubOcrEngine engine,
         out FakeCaptureProvider capture,
         out FakeCursorProvider cursor,
-        string ocrText = "y109.78\nx98.09")
+        string ocrText = "y109.78\nx98.09", string? sampleDirectory = null)
     {
         engine = new StubOcrEngine(ocrText);
         capture = new FakeCaptureProvider();
@@ -108,7 +108,8 @@ public class MortarCaptureServiceTests
             new CoordinateTextParser(),
             new CoordinateValidator(new CoordinateValidationOptions { MinimumConfidence = 0.0 }));
 
-        return new MortarCaptureService(capture, cursor, recognizer, () => new RoiSettings { AutoScale = false });
+        return new MortarCaptureService(capture, cursor, recognizer, () => new RoiSettings { AutoScale = false },
+            debugSettingsAccessor: () => new DebugSettings { SaveFullFrame = sampleDirectory is not null }, sampleDirectory: sampleDirectory);
     }
 
     [Fact]
@@ -122,6 +123,44 @@ public class MortarCaptureServiceTests
         Assert.Equal(98.09, outcome.Coordinate!.Value.X, precision: 9);
         Assert.Equal(109.78, outcome.Coordinate.Value.Y, precision: 9);
         Assert.Equal(1, capture.Calls);
+    }
+
+    [Fact]
+    public async Task BurstCanFreezeAllFramesBeforeOcrAndNeverReReadsTheCursor()
+    {
+        using var service = CreateService(out var engine, out var capture, out var cursor);
+        using var first = service.CaptureFrame();
+        using var second = service.CaptureFrame();
+        Assert.Equal(2, capture.Calls);
+        Assert.Equal(0, engine.Calls);
+        cursor.X += 400;
+        cursor.Y += 200;
+        var outcome = await service.RecognizeFrameAsync(first);
+        Assert.Equal(first.Cursor, outcome.Cursor);
+        Assert.Equal(first.Roi, outcome.Roi);
+        Assert.Equal(2, capture.Calls);
+        Assert.True(outcome.Success);
+    }
+
+    [Fact]
+    public void DiagnosticSampleAndOcrShareOneCaptureInsteadOfTwoDifferentMoments()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "MortarHUD.Tests", Guid.NewGuid().ToString("N"));
+        try
+        {
+            using (var service = CreateService(out var engine, out var capture, out _, sampleDirectory: directory))
+            {
+                using var frame = service.CaptureFrame();
+                Assert.Equal(1, capture.Calls);
+                Assert.Equal(0, engine.Calls);
+                Assert.Equal(RoiSettings.ReferenceWidth, frame.Image.Width);
+                Assert.Equal(32, frame.Image.At<Vec3b>(0, 0).Item0);
+            }
+            Assert.Single(Directory.GetFiles(directory, "*_frame.png"));
+            var metadata = File.ReadAllText(Assert.Single(Directory.GetFiles(directory, "*_sample.json")));
+            Assert.Contains("\"roiFromSameFrame\": true", metadata);
+        }
+        finally { if (Directory.Exists(directory)) Directory.Delete(directory, recursive: true); }
     }
 
     /// <summary>

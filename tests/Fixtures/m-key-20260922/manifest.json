@@ -1,0 +1,384 @@
+[
+  {
+    "file": "2026-09-22_005732_823_roi.png",
+    "expectedX": 98.49,
+    "expectedY": 110.38,
+    "source": "2026-09-22_005732_823_sample.json",
+    "kind": "readable"
+  },
+  {
+    "file": "2026-09-22_005733_613_roi.png",
+    "expectedX": null,
+    "expectedY": null,
+    "source": "2026-09-22_005733_613_sample.json",
+    "kind": "occluded-or-closed"
+  },
+  {
+    "file": "2026-09-22_005734_606_roi.png",
+    "expectedX": 98.49,
+    "expectedY": 110.38,
+    "source": "2026-09-22_005734_606_sample.json",
+    "kind": "readable"
+  },
+  {
+    "file": "2026-09-22_005735_119_roi.png",
+    "expectedX": null,
+    "expectedY": null,
+    "source": "2026-09-22_005735_119_sample.json",
+    "kind": "occluded-or-closed"
+  },
+  {
+    "file": "2026-09-22_005738_503_roi.png",
+    "expectedX": 98.49,
+    "expectedY": 110.38,
+    "source": "2026-09-22_005738_503_sample.json",
+    "kind": "readable"
+  },
+  {
+    "file": "2026-09-22_005739_047_roi.png",
+    "expectedX": null,
+    "expectedY": null,
+    "source": "2026-09-22_005739_047_sample.json",
+    "kind": "occluded-or-closed"
+  },
+  {
+    "file": "2026-09-22_005741_202_roi.png",
+    "expectedX": 98.49,
+    "expectedY": 110.38,
+    "source": "2026-09-22_005741_202_sample.json",
+    "kind": "readable"
+  },
+  {
+    "file": "2026-09-22_005741_731_roi.png",
+    "expectedX": null,
+    "expectedY": null,
+    "source": "2026-09-22_005741_731_sample.json",
+    "kind": "occluded-or-closed"
+  },
+  {
+    "file": "2026-09-22_005743_094_roi.png",
+    "expectedX": 98.49,
+    "expectedY": 110.38,
+    "source": "2026-09-22_005743_094_sample.json",
+    "kind": "readable"
+  },
+  {
+    "file": "2026-09-22_005744_040_roi.png",
+    "expectedX": null,
+    "expectedY": null,
+    "source": "2026-09-22_005744_040_sample.json",
+    "kind": "occluded-or-closed"
+  },
+  {
+    "file": "2026-09-22_005744_957_roi.png",
+    "expectedX": 98.49,
+    "expectedY": 110.38,
+    "source": "2026-09-22_005744_957_sample.json",
+    "kind": "readable"
+  },
+  {
+    "file": "2026-09-22_005745_950_roi.png",
+    "expectedX": null,
+    "expectedY": null,
+    "source": "2026-09-22_005745_950_sample.json",
+    "kind": "occluded-or-closed"
+  },
+  {
+    "file": "2026-09-22_005746_511_roi.png",
+    "expectedX": 98.49,
+    "expectedY": 110.38,
+    "source": "2026-09-22_005746_511_sample.json",
+    "kind": "readable"
+  },
+  {
+    "file": "2026-09-22_005747_082_roi.png",
+    "expectedX": null,
+    "expectedY": null,
+    "source": "2026-09-22_005747_082_sample.json",
+    "kind": "occluded-or-closed"
+  },
+  {
+    "file": "2026-09-22_005748_539_roi.png",
+    "expectedX": null,
+    "expectedY": null,
+    "source": "2026-09-22_005748_539_sample.json",
+    "kind": "occluded-or-closed"
+  },
+  {
+    "file": "2026-09-22_005749_254_roi.png",
+    "expectedX": 98.49,
+    "expectedY": 110.38,
+    "source": "2026-09-22_005749_254_sample.json",
+    "kind": "readable"
+  },
+  {
+    "file": "2026-09-22_005749_751_roi.png",
+    "expectedX": null,
+    "expectedY": null,
+    "source": "2026-09-22_005749_751_sample.json",
+    "kind": "occluded-or-closed"
+  },
+  {
+    "file": "2026-09-22_005750_264_roi.png",
+    "expectedX": null,
+    "expectedY": null,
+    "source": "2026-09-22_005750_264_sample.json",
+    "kind": "occluded-or-closed"
+  },
+  {
+    "file": "2026-09-22_005751_599_roi.png",
+    "expectedX": 98.49,
+    "expectedY": 110.38,
+    "source": "2026-09-22_005751_599_sample.json",
+    "kind": "readable"
+  },
+  {
+    "file": "2026-09-22_005752_454_roi.png",
+    "expectedX": null,
+    "expectedY": null,
+    "source": "2026-09-22_005752_454_sample.json",
+    "kind": "occluded-or-closed"
+  },
+  {
+    "file": "2026-09-22_005758_770_roi.png",
+    "expectedX": 98.49,
+    "expectedY": 110.38,
+    "source": "2026-09-22_005758_770_sample.json",
+    "kind": "readable"
+  },
+  {
+    "file": "2026-09-22_005759_405_roi.png",
+    "expectedX": null,
+    "expectedY": null,
+    "source": "2026-09-22_005759_405_sample.json",
+    "kind": "occluded-or-closed"
+  },
+  {
+    "file": "2026-09-22_005805_132_roi.png",
+    "expectedX": null,
+    "expectedY": null,
+    "source": "2026-09-22_005805_132_sample.json",
+    "kind": "occluded-or-closed"
+  },
+  {
+    "file": "2026-09-22_005830_478_roi.png",
+    "expectedX": null,
+    "expectedY": null,
+    "source": "2026-09-22_005830_478_sample.json",
+    "kind": "occluded-or-closed"
+  },
+  {
+    "file": "2026-09-22_005832_169_roi.png",
+    "expectedX": null,
+    "expectedY": null,
+    "source": "2026-09-22_005832_169_sample.json",
+    "kind": "occluded-or-closed"
+  },
+  {
+    "file": "2026-09-22_005833_007_roi.png",
+    "expectedX": 98.49,
+    "expectedY": 110.38,
+    "source": "2026-09-22_005833_007_sample.json",
+    "kind": "readable"
+  },
+  {
+    "file": "2026-09-22_005834_200_roi.png",
+    "expectedX": null,
+    "expectedY": null,
+    "source": "2026-09-22_005834_200_sample.json",
+    "kind": "occluded-or-closed"
+  },
+  {
+    "file": "2026-09-22_005834_759_roi.png",
+    "expectedX": 98.49,
+    "expectedY": 110.38,
+    "source": "2026-09-22_005834_759_sample.json",
+    "kind": "readable"
+  },
+  {
+    "file": "2026-09-22_005839_838_roi.png",
+    "expectedX": null,
+    "expectedY": null,
+    "source": "2026-09-22_005839_838_sample.json",
+    "kind": "occluded-or-closed"
+  },
+  {
+    "file": "2026-09-22_005841_577_roi.png",
+    "expectedX": null,
+    "expectedY": null,
+    "source": "2026-09-22_005841_577_sample.json",
+    "kind": "occluded-or-closed"
+  },
+  {
+    "file": "2026-09-22_005957_310_roi.png",
+    "expectedX": 98.49,
+    "expectedY": 110.38,
+    "source": "2026-09-22_005957_310_sample.json",
+    "kind": "readable-blue-edge"
+  },
+  {
+    "file": "2026-09-22_010010_505_roi.png",
+    "expectedX": 98.49,
+    "expectedY": 110.38,
+    "source": "2026-09-22_010010_505_sample.json",
+    "kind": "readable-blue-edge"
+  },
+  {
+    "file": "2026-09-22_010017_352_roi.png",
+    "expectedX": 98.49,
+    "expectedY": 110.38,
+    "source": "2026-09-22_010017_352_sample.json",
+    "kind": "readable-blue-edge"
+  },
+  {
+    "file": "2026-09-22_010019_402_roi.png",
+    "expectedX": 98.49,
+    "expectedY": 110.38,
+    "source": "2026-09-22_010019_402_sample.json",
+    "kind": "readable-blue-edge"
+  },
+  {
+    "file": "2026-09-22_010021_872_roi.png",
+    "expectedX": 98.49,
+    "expectedY": 110.38,
+    "source": "2026-09-22_010021_872_sample.json",
+    "kind": "readable-blue-edge"
+  },
+  {
+    "file": "2026-09-22_010040_567_roi.png",
+    "expectedX": 98.49,
+    "expectedY": 110.38,
+    "source": "2026-09-22_010040_567_sample.json",
+    "kind": "readable-blue-edge"
+  },
+  {
+    "file": "2026-09-22_010041_033_roi.png",
+    "expectedX": 98.49,
+    "expectedY": 110.38,
+    "source": "2026-09-22_010041_033_sample.json",
+    "kind": "readable-blue-edge"
+  },
+  {
+    "file": "2026-09-22_010041_468_roi.png",
+    "expectedX": 98.49,
+    "expectedY": 110.38,
+    "source": "2026-09-22_010041_468_sample.json",
+    "kind": "readable-blue-edge"
+  },
+  {
+    "file": "2026-09-22_010043_845_roi.png",
+    "expectedX": 98.49,
+    "expectedY": 110.38,
+    "source": "2026-09-22_010043_845_sample.json",
+    "kind": "readable-blue-edge"
+  },
+  {
+    "file": "2026-09-22_010044_312_roi.png",
+    "expectedX": 98.49,
+    "expectedY": 110.38,
+    "source": "2026-09-22_010044_312_sample.json",
+    "kind": "readable-blue-edge"
+  },
+  {
+    "file": "2026-09-22_010044_778_roi.png",
+    "expectedX": 98.49,
+    "expectedY": 110.38,
+    "source": "2026-09-22_010044_778_sample.json",
+    "kind": "readable-blue-edge"
+  },
+  {
+    "file": "2026-09-22_010053_944_roi.png",
+    "expectedX": 98.49,
+    "expectedY": 110.38,
+    "source": "2026-09-22_010053_944_sample.json",
+    "kind": "readable-blue-edge"
+  },
+  {
+    "file": "2026-09-22_010054_327_roi.png",
+    "expectedX": 98.49,
+    "expectedY": 110.38,
+    "source": "2026-09-22_010054_327_sample.json",
+    "kind": "readable-blue-edge"
+  },
+  {
+    "file": "2026-09-22_010054_891_roi.png",
+    "expectedX": 98.49,
+    "expectedY": 110.38,
+    "source": "2026-09-22_010054_891_sample.json",
+    "kind": "readable-blue-edge"
+  },
+  {
+    "file": "2026-09-22_010055_450_roi.png",
+    "expectedX": 98.49,
+    "expectedY": 110.38,
+    "source": "2026-09-22_010055_450_sample.json",
+    "kind": "readable-blue-edge"
+  },
+  {
+    "file": "2026-09-22_010250_685_roi.png",
+    "expectedX": 98.49,
+    "expectedY": 110.38,
+    "source": "2026-09-22_010250_685_sample.json",
+    "kind": "readable-blue-edge"
+  },
+  {
+    "file": "2026-09-22_010252_548_roi.png",
+    "expectedX": 98.49,
+    "expectedY": 110.38,
+    "source": "2026-09-22_010252_548_sample.json",
+    "kind": "readable-blue-edge"
+  },
+  {
+    "file": "2026-09-22_010253_029_roi.png",
+    "expectedX": 98.49,
+    "expectedY": 110.38,
+    "source": "2026-09-22_010253_029_sample.json",
+    "kind": "readable-blue-edge"
+  },
+  {
+    "file": "2026-09-22_010253_524_roi.png",
+    "expectedX": 98.49,
+    "expectedY": 110.38,
+    "source": "2026-09-22_010253_524_sample.json",
+    "kind": "readable-blue-edge"
+  },
+  {
+    "file": "2026-09-22_010254_998_roi.png",
+    "expectedX": 98.49,
+    "expectedY": 110.38,
+    "source": "2026-09-22_010254_998_sample.json",
+    "kind": "readable-blue-edge"
+  },
+  {
+    "file": "2026-09-17_195121_215_roi.png",
+    "expectedX": 98.53,
+    "expectedY": 110.21,
+    "source": "2026-09-17_195121_215_sample.json",
+    "kind": "older-ambiguous",
+    "requiredSuccess": false
+  },
+  {
+    "file": "2026-09-17_195200_554_roi.png",
+    "expectedX": 97.93,
+    "expectedY": 109.93,
+    "source": "2026-09-17_195200_554_sample.json",
+    "kind": "older-ambiguous",
+    "requiredSuccess": false
+  },
+  {
+    "file": "2026-09-17_203107_832_roi.png",
+    "expectedX": 103.52,
+    "expectedY": 110.68,
+    "source": "2026-09-17_203107_832_sample.json",
+    "kind": "older-ambiguous",
+    "requiredSuccess": false
+  },
+  {
+    "file": "2026-09-17_203156_548_roi.png",
+    "expectedX": 98.52,
+    "expectedY": 110.4,
+    "source": "2026-09-17_203156_548_sample.json",
+    "kind": "older-ambiguous",
+    "requiredSuccess": false
+  }
+]

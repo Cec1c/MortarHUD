@@ -52,6 +52,7 @@ public partial class SettingsWindow : Window
         _viewModel = new SettingsViewModel(settings);
         _viewModel.Changed += OnViewModelChanged;
         DataContext = _viewModel;
+        RulerPanel.Load(settings.Ruler);
 
         // 事件在代码里挂，不写在 XAML 上。
         // XAML 里带默认值的事件绑定会在 InitializeComponent() 期间就引发一次，
@@ -615,7 +616,9 @@ public partial class SettingsWindow : Window
     {
         try
         {
+            var ruler = RulerPanel.BuildSettings();
             _viewModel.SaveTo(_settings);
+            _settings.Ruler = ruler;
             await _onApply();
             StatusText.Text = Loc.F("AppliedAt", DateTime.Now);
             return true;

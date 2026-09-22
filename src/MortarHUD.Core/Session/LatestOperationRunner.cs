@@ -8,12 +8,13 @@ public sealed class LatestOperationRunner
     private CancellationTokenSource? _current;
     private CancellationTokenSource? _activityCancelled;
     private bool _cancelOnActivity;
+    private bool _framesSealed;
 
-    public void CancelOnActivity()
+    public void CancelOnActivity(bool pointerMotion = false)
     {
         lock (_sync)
         {
-            if (!_cancelOnActivity || _current is null)
+            if (!_cancelOnActivity || _current is null || (pointerMotion && _framesSealed))
             {
                 return;
             }
@@ -23,6 +24,15 @@ public sealed class LatestOperationRunner
             // 用户动鼠标导致的取消必须给提示，否则表现就是「按了键没反应」。
             _activityCancelled = _current;
             _current.Cancel();
+        }
+    }
+
+    /// <summary>只放行截图之后的鼠标移动；点击、滚轮、键盘和新请求仍然取消。</summary>
+    public void SealFrames(CancellationToken token)
+    {
+        lock (_sync)
+        {
+            if (_current?.Token == token && !token.IsCancellationRequested) _framesSealed = true;
         }
     }
 
@@ -61,6 +71,7 @@ public sealed class LatestOperationRunner
             _current?.Cancel();
             _current = source = new CancellationTokenSource();
             _cancelOnActivity = cancelOnActivity;
+            _framesSealed = false;
         }
 
         var entered = false;
@@ -78,7 +89,7 @@ public sealed class LatestOperationRunner
             bool byActivity;
             lock (_sync)
             {
-                byActivity = ReferenceEquals(_activityCancelled, source);
+                byActivity = ReferenceEquals(_activityCancelled, source) && ReferenceEquals(_current, source);
             }
 
             if (byActivity)

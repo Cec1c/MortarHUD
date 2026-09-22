@@ -73,6 +73,7 @@ public sealed class GlobalHotkeyManager : IGlobalHotkeyService
 
     public event EventHandler<HotkeyPressedEventArgs>? HotkeyPressed;
     public event EventHandler? UserActivity;
+    public event EventHandler? PointerMotion;
 
     /// <summary>
     /// 诊断日志出口，App 会把它接到文件日志上。
@@ -296,6 +297,7 @@ public sealed class GlobalHotkeyManager : IGlobalHotkeyService
         HotkeyAction.ToggleHud => Loc.T("ToggleHUD"),
         HotkeyAction.OpenSettings => Loc.T("OpenSettings"),
         HotkeyAction.AutoCalibrateGun => Loc.T("AutoCalibrateTheGunFromTheMapKey"),
+        HotkeyAction.ToggleRuler => "显示 / 隐藏炮口标尺",
         _ => action.ToString(),
     };
 
@@ -365,9 +367,10 @@ public sealed class GlobalHotkeyManager : IGlobalHotkeyService
         var flags = RawInput.ReadUInt16(buffer, offset + RawInput.MouseButtonFlagsOffset);
 
         // 只观察设备活动，不拦截输入；移动或滚轮使尚未提交的采集作废。
-        if ((flags & 0x0D55) != 0 || Marshal.ReadInt32(buffer, offset + 12) != 0
-            || Marshal.ReadInt32(buffer, offset + 16) != 0)
+        if ((flags & 0x0D55) != 0)
             UserActivity?.Invoke(this, EventArgs.Empty);
+        else if (Marshal.ReadInt32(buffer, offset + 12) != 0 || Marshal.ReadInt32(buffer, offset + 16) != 0)
+            PointerMotion?.Invoke(this, EventArgs.Empty);
 
         var modifiers = ReadModifierState();
         // Flags 是位掩码：同时按键/滚轮不能让合法的按下事件消失。
