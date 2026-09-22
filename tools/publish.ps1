@@ -2,12 +2,14 @@
 param(
     [ValidateSet('portable', 'folder', 'runtime')][string]$Mode = 'portable',
     [string]$OutputDirectory,
-    [switch]$NoCompression
+    [switch]$NoCompression,
+    [string]$DotnetPath = 'C:\dotnet10\dotnet.exe'
 )
 
 $ErrorActionPreference = 'Stop'
 $repo = Split-Path $PSScriptRoot -Parent
-$sdk = 'C:\dotnet10\dotnet.exe'
+# 本机默认仍绕过 PATH 中的 .NET 6；CI 显式传入 setup-dotnet 安装的 SDK。
+$sdk = $DotnetPath
 if (-not (Test-Path -LiteralPath $sdk)) { throw "缺少 .NET 10 SDK：$sdk" }
 if (-not $OutputDirectory) { $OutputDirectory = Join-Path $repo "dist\MortarHUD-next-$Mode" }
 $destination = [IO.Path]::GetFullPath($OutputDirectory, $repo)

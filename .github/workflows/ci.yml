@@ -3,13 +3,17 @@ name: CI
 on:
   push:
     branches: [main]
+    tags: ['v*']
   pull_request:
   workflow_dispatch:
 
-# 同一分支上只保留最新一次，旧的自然作废。
+permissions:
+  contents: read
+
+# 分支只保留最新一次；标签发布不能因重复触发被中途取消。
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
 
 jobs:
   build-and-test:
@@ -44,4 +48,101 @@ jobs:
       # 放进 CI 是因为它拦的是一类**静默**故障：Tesseract 原生库找不到时程序不报错，
       # 只是悄悄退回模板引擎（缺数字 2、3），表现为「怎么点都识别不出来」。
       - name: 启动自检
-        run: ./src/MortarHUD.App/bin/Release/net10.0-windows/MortarHUD.exe --selftest
+        timeout-minutes: 3
+        shell: pwsh
+        run: |
+          $process = Start-Process -FilePath ./src/MortarHUD.App/bin/Release/net10.0-windows/MortarHUD.exe -ArgumentList '--selftest' -Wait -PassThru -WindowStyle Hidden
+          if ($process.ExitCode -ne 0) { throw "启动自检失败：$($process.ExitCode)" }
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build-and-test
+    runs-on: windows-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    env:
+      RELEASE_TAG: ${{ github.ref_name }}
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', 'Directory.Build.props', 'global.json') }}
+          restore-keys: ${{ runner.os }}-nuget-
+
+      - name: 核对标签、程序版本与发布说明
+        run: |
+          if ($env:RELEASE_TAG -notmatch '^v\d+\.\d+\.\d+$') { throw '仅接受 vX.Y.Z 正式版标签' }
+          [xml]$props = Get-Content -LiteralPath Directory.Build.props -Raw
+          $version = $env:RELEASE_TAG.Substring(1)
+          if ($props.Project.PropertyGroup.Version -ne $version -or
+              $props.Project.PropertyGroup.AssemblyVersion -ne "$version.0" -or
+              $props.Project.PropertyGroup.FileVersion -ne "$version.0") {
+            throw '标签与 Directory.Build.props 中的版本不一致'
+          }
+          if (-not (Test-Path -LiteralPath "docs/releases/$env:RELEASE_TAG.md")) { throw '缺少本版本发布说明' }
+          "RELEASE_VERSION=$version" >> $env:GITHUB_ENV
+          "PACKAGE_NAME=MortarHUD-$version-win-x64-portable" >> $env:GITHUB_ENV
+
+      - name: 构建便携版
+        run: |
+          ./tools/publish.ps1 -Mode portable -OutputDirectory "dist/$env:PACKAGE_NAME" -DotnetPath (Get-Command dotnet).Source
+
+      - name: 从外部工作目录自检便携版
+        timeout-minutes: 3
+        run: |
+          $exe = (Resolve-Path "dist/$env:PACKAGE_NAME/MortarHUD.exe").Path
+          $fileVersion = (Get-Item -LiteralPath $exe).VersionInfo.FileVersion
+          if ($fileVersion -ne "$env:RELEASE_VERSION.0") { throw "EXE 版本不正确：$fileVersion" }
+          $process = Start-Process -FilePath $exe -ArgumentList '--selftest' -WorkingDirectory $env:RUNNER_TEMP -Wait -PassThru -WindowStyle Hidden
+          if ($process.ExitCode -ne 0) { throw "便携版自检失败：$($process.ExitCode)" }
+          # 自检还需确认原生 OCR 已加载，不能把静默退回模板引擎的包发出去。
+          $log = Get-ChildItem -LiteralPath "$env:APPDATA/MortarHUD/Logs" -Filter '*.log' | Sort-Object LastWriteTime | Select-Object -Last 1
+          if (-not $log -or -not (Select-String -LiteralPath $log.FullName -SimpleMatch '引擎=Tesseract+Tesseract 流水线=C+C-Balanced')) {
+            throw '未确认便携版使用 Tesseract 和 C/C-Balanced'
+          }
+
+      - name: 打包与生成校验和
+        run: |
+          Copy-Item -LiteralPath "docs/releases/$env:RELEASE_TAG.md" -Destination "dist/$env:PACKAGE_NAME/使用说明.md"
+          Copy-Item -LiteralPath LICENSE -Destination "dist/$env:PACKAGE_NAME/LICENSE"
+          Compress-Archive -Path "dist/$env:PACKAGE_NAME/*" -DestinationPath "dist/$env:PACKAGE_NAME.zip"
+          $hash = (Get-FileHash -LiteralPath "dist/$env:PACKAGE_NAME.zip" -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  $env:PACKAGE_NAME.zip" | Set-Content -LiteralPath dist/SHA256SUMS.txt -Encoding utf8NoBOM
+          "源提交：$env:GITHUB_SHA`n`nSHA-256：$hash" >> $env:GITHUB_STEP_SUMMARY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PACKAGE_NAME }}
+          path: |
+            dist/${{ env.PACKAGE_NAME }}.zip
+            dist/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: 上传资产并公开 Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $notes = "docs/releases/$env:RELEASE_TAG.md"
+          $title = (Get-Content -LiteralPath $notes -TotalCount 1) -replace '^#\s*', ''
+          $draft = gh release view $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY --json isDraft --jq .isDraft 2>$null
+          if ($LASTEXITCODE -eq 0) {
+            if ($draft -ne 'true') { throw '该版本已公开，不自动覆盖已发布资产' }
+          } else {
+            gh release create $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY --verify-tag --draft --title $title --notes-file $notes
+            if ($LASTEXITCODE -ne 0) { throw '创建 Release 草稿失败' }
+          }
+          gh release upload $env:RELEASE_TAG "dist/$env:PACKAGE_NAME.zip" dist/SHA256SUMS.txt --repo $env:GITHUB_REPOSITORY --clobber
+          if ($LASTEXITCODE -ne 0) { throw '上传 Release 资产失败，保留草稿' }
+          gh release edit $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY --draft=false --latest --title $title --notes-file $notes
+          if ($LASTEXITCODE -ne 0) { throw '公开 Release 失败' }

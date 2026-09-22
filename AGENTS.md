@@ -52,8 +52,12 @@ publish.cmd folder       # 备选：文件夹布局（287 个文件），启动�
 publish.cmd runtime      # 框架依赖：目标机需装 .NET 10 桌面运行时
 ```
 
-`publish.cmd` 只是 `tools\publish.ps1` 的壳。脚本固定用 `C:\dotnet10\dotnet.exe`，
-不再 `where dotnet`（那会解析到 .NET 6）。发布完会校验产物里没有 FFmpeg 残留。
+`publish.cmd` 只是 `tools\publish.ps1` 的壳。脚本默认用 `C:\dotnet10\dotnet.exe`，
+本机不再 `where dotnet`（那会解析到 .NET 6）；CI 通过 `-DotnetPath` 显式传入 SDK。发布完会校验产物里没有 FFmpeg 残留。
+
+正式 Release 由 `.github/workflows/ci.yml` 自动发布：先更新 `Directory.Build.props` 的版本和
+`docs/releases/vX.Y.Z.md`，再推送对应 `vX.Y.Z` 标签。CI 构建、测试通过后调用同一发布脚本，
+从外部目录自检便携版并确认 Tesseract 已加载，生成 ZIP 和 SHA-256，资产上传完才公开 Release。
 
 ### 启动目录
 
