@@ -7,6 +7,7 @@ using MortarHUD.Core.Models;
 using MortarHUD.Core.Parsing;
 using MortarHUD.Core.Validation;
 using MortarHUD.Platform.Windows.Mouse;
+using MortarHUD.Platform.Windows.WindowStyles;
 using OpenCvSharp;
 using Xunit;
 
@@ -148,12 +149,19 @@ public class MortarCaptureServiceTests
         var directory = Path.Combine(Path.GetTempPath(), "MortarHUD.Tests", Guid.NewGuid().ToString("N"));
         try
         {
-            using (var service = CreateService(out var engine, out var capture, out _, sampleDirectory: directory))
+            using (var service = CreateService(out var engine, out var capture, out var cursor, sampleDirectory: directory))
             {
+                // CI 桌面宽度可能只有 1024px，默认桩光标 X=1000 会让 ROI 被正常裁成 19px。
+                // 本用例验证同帧裁图，光标随当前桌面居中；边缘裁剪由 RoiCalculatorTests 覆盖。
+                var bounds = OverlayWindowController.GetVirtualScreenBounds();
+                cursor.X = bounds.Left + bounds.Width / 2;
+                cursor.Y = bounds.Top + bounds.Height / 2;
                 using var frame = service.CaptureFrame();
                 Assert.Equal(1, capture.Calls);
+                Assert.Equal(bounds, capture.LastRect);
                 Assert.Equal(0, engine.Calls);
                 Assert.Equal(RoiSettings.ReferenceWidth, frame.Image.Width);
+                Assert.Equal(RoiSettings.ReferenceHeight, frame.Image.Height);
                 Assert.Equal(32, frame.Image.At<Vec3b>(0, 0).Item0);
             }
             Assert.Single(Directory.GetFiles(directory, "*_frame.png"));
